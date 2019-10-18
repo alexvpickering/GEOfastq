@@ -150,7 +150,7 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
   dir1 <- substr(srr, 1, 6)
 
   if (type[1] == 'ebi') {
-    digits  <- gsub(prefix, '', srr)
+    digits  <- gsub('^SRR', '', srr)
     ndigits <- nchar(digits)
 
     if (ndigits == 7) {
