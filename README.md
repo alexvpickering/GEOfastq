@@ -1,6 +1,6 @@
 # GEOfastq
 
-## Installation
+### Install GEOfastq
 
 To download and install `GEOfastq`:
 
@@ -8,7 +8,9 @@ To download and install `GEOfastq`:
 remotes::install_github('alexvpickering/GEOfastq')
 ```
 
-`GEOfastq` uses [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list). Download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
+### Install Aspera Connect
+
+`GEOfastq` uses [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) because it is faster than ftp. Download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
 
 ```bash
 wget https://download.asperasoft.com/download/sw/connect/3.9.6/ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
@@ -41,9 +43,7 @@ system('ascp --version')
 ```
 
 
-## Installation
-
-## Usage
+### Usage
 
 First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get study metadata and corresponding fastq.gz download links on [ENA](https://www.ebi.ac.uk/ena):
 
