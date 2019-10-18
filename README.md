@@ -1,6 +1,12 @@
 # GEOfastq
 
-## Setup
+## Installation
+
+To download and install `GEOfastq`:
+
+```R
+remotes::install_github('alexvpickering/GEOfastq')
+```
 
 `GEOfastq` uses [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list). Download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
 
@@ -34,6 +40,8 @@ Sys.getenv('PATH')
 system('ascp --version')
 ```
 
+
+## Installation
 
 ## Usage
 
