@@ -14,7 +14,7 @@ remotes::install_github('alexvpickering/GEOfastq')
 
 ```bash
 wget https://download.asperasoft.com/download/sw/connect/3.9.6/ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
-tar -zxvf ibm-aspera-connect-version.tar.gz ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
+tar -zxvf ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
 ./ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.sh
 ```
 
