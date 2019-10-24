@@ -5,6 +5,7 @@
 To download and install `GEOfastq`:
 
 ```R
+install.packages('remotes')
 remotes::install_github('alexvpickering/GEOfastq')
 ```
 
@@ -21,14 +22,14 @@ tar -zxvf ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
 I also had to make sure `ascp` was on the the `PATH`:
 
 ```bash
-echo 'export PATH=$HOME/.aspera/connect/bin/:$PATH' >> ~/.bashrc
+echo 'export PATH=$HOME/.aspera/connect/bin:$PATH' >> ~/.bashrc
 source ~/.bashrc
 ```
 
 For Rstudio to find `ascp` on the `PATH`, I also had to add this to a .Renviron:
 
 ```bash
-echo 'PATH=${HOME}/.aspera/connect/bin/:${PATH}' >> ./Renviron
+echo 'PATH=${HOME}/.aspera/connect/bin:${PATH}' >> ./Renviron
 ```
 
 After restarting Rstudio, to confirm things are set up properly:
@@ -40,6 +41,21 @@ Sys.getenv('PATH')
 
 # should print info about Aspera Connect
 system('ascp --version')
+```
+
+### Install docker image
+
+To install `GEOfastq` and Aspera Connect from a pre-built docker image:
+
+```bash
+# retrieve pre-built geofastq docker image
+wget https://drugseqr.s3.us-east-2.amazonaws.com/geofastq_latest.tar.gz
+sudo docker load < geofastq_latest.tar.gz
+
+# run interactive container with host portion of `-v host:container` mounted where you want to persist data to
+sudo docker run -it --rm \
+  -v /srv/shiny-server:/srv/shiny-server \
+  geofastq /bin/bash
 ```
 
 

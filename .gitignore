@@ -2,5 +2,5 @@
 .Rhistory
 .RData
 .Ruserdata
-packrat/lib*/
-packrat/src*/
+
+geofastq_latest.tar.gz
