@@ -54,7 +54,7 @@ sudo docker load < geofastq_latest.tar.gz
 
 # run interactive container with host portion of `-v host:container` mounted where you want to persist data to
 sudo docker run -it --rm \
-  -v /srv/shiny-server:/srv/shiny-server \
+  -v /srv:/srv \
   geofastq /bin/bash
 ```
 
