@@ -234,7 +234,9 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
 
   } else if (method[1] == 'ftp') {
     files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
-    download.file(files, file.path(gse_dir, fnames))
+    for (i in seq_along(files)) {
+      download.file(files[i], file.path(gse_dir, fnames[i]))
+    }
   }
 }
 
