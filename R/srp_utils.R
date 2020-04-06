@@ -184,7 +184,7 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' @param data_dir Path to folder that \code{gse_name} folder will be created in.
 #'
 #' @export
-get_fastqs <- function(gse_name, srp_meta, data_dir = getwd()) {
+get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('aspera', 'ftp')) {
 
   # setup gse directory
   gse_dir  <- file.path(data_dir, gse_name)
@@ -203,7 +203,7 @@ get_fastqs <- function(gse_name, srp_meta, data_dir = getwd()) {
 
     for (srr_name in srr_names) {
       # try to get fastq from ebi
-      get_ebi_fastqs(srp_meta, srr_name, gse_dir)
+      get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1])
     }
   }
   return(NULL)
@@ -229,7 +229,7 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
     ascp_pubkey <- gsub('bin/ascp$', 'etc/asperaweb_id_dsa.openssh', ascp_path)
 
     ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
-    files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+    files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     ascpR(ascpCMD, files, gse_dir)
 
   } else if (method[1] == 'ftp') {
