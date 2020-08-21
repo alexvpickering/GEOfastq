@@ -49,8 +49,7 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
 
     gsm_name <- samples[j]
     # get html text
-    gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name)
-
+    gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name, '&targ=self&form=text&view=full')
     gsm_html <- NULL
     attempt <- 1
     while(is.null(gsm_html) && attempt <= 3) {
@@ -60,27 +59,17 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
     gsm_text <- rvest::html_text(gsm_html)
 
     # get SRA number for this GSM
-    experiment <- stringr::str_extract(gsm_text, 'SRA\nSRX\\d+\n')
-    experiment <- gsub('SRA\n(.+?)\n', '\\1', experiment)
+    experiment <- stringr::str_extract(gsm_text, 'SRX\\d+\r')
+    experiment <- gsub('(SRX\\d+)\r', '\\1', experiment)
 
-    # extract other GSM data while we are here
-    title <- stringr::str_extract(gsm_text, '\nTitle\n.+?\n')
-    sample_type <- stringr::str_extract(gsm_text, '\nSample type\n.+?\n')
-    source_name <- stringr::str_extract(gsm_text, '\nSource name\n.+?\n')
-    organism <- stringr::str_extract(gsm_text, '\nOrganism\n.+?\n')
-    characteristics <- stringr::str_extract(gsm_text, '\nCharacteristics\n.+?\n')
-    treatment_protocol <- stringr::str_extract(gsm_text, '\nTreatment protocol\n.+?\n')
-    growth_protocol <- stringr::str_extract(gsm_text, '\nGrowth protocol\n.+?\n')
-    extracted_molecule <- stringr::str_extract(gsm_text, '\nExtracted molecule\n.+?\n')
-    extraction_protocol <- stringr::str_extract(gsm_text, stringr::regex("\nExtraction protocol\n.+?\nLibrary strategy", dotall = TRUE))
-    extraction_protocol <- gsub('\nExtraction protocol\n(.+?)\n\nLibrary strategy', '\\1', extraction_protocol)
-    library_strategy <- stringr::str_extract(gsm_text, '\nLibrary strategy\n.+?\n')
-    library_selection <- stringr::str_extract(gsm_text, '\nLibrary selection\n.+?\n')
-    instrument_model <- stringr::str_extract(gsm_text, '\nInstrument model\n.+?\n')
-    description <- stringr::str_extract(gsm_text, '\nDescription\n.+?\n')
-    data_processing <- stringr::str_extract(gsm_text, stringr::regex('\nData processing\n.+?\nSubmission date\n', dotall = TRUE))
-    data_processing <- gsub('\nData processing\n(.+?)\n\nSubmission date\n', '\\1', data_processing)
-    platform_id <- stringr::str_extract(gsm_text, '\nPlatform ID\n.+?\n')
+    info <- strsplit(gsm_text, '!Sample_')[[1]]
+    info <- gsub('\r\n', '', info)
+
+    cols <- gsub('^(.+?) = .+?$', '\\1', info)[-1]
+    cols <- make.unique(cols)
+    vals <- gsub('^.+? = (.+?$)', '\\1', info)[-1]
+    names(vals) <- cols
+
 
     if (!is.na(experiment)) {
 
@@ -107,21 +96,7 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
         srp_meta[runs, 'run'] <- runs
         srp_meta[runs, 'experiment'] <- experiment
         srp_meta[runs, 'gsm_name'] <- gsm_name
-        srp_meta[runs, 'title'] <- gsub('\nTitle\n(.+?)\n', '\\1', title)
-        srp_meta[runs, 'sample_type'] <- gsub('\nSample type\n(.+?)\n', '\\1', sample_type)
-        srp_meta[runs, 'source_name'] <- gsub('\nSource name\n(.+?)\n', '\\1', source_name)
-        srp_meta[runs, 'organism'] <- gsub('\nOrganism\n(.+?)\n', '\\1', organism)
-        srp_meta[runs, 'characteristics'] <- gsub('\nCharacteristics\n(.+?)\n', '\\1', characteristics)
-        srp_meta[runs, 'treatment_protocol'] <- gsub('\nTreatment protocol\n(.+?)\n', '\\1', treatment_protocol)
-        srp_meta[runs, 'growth_protocol'] <- gsub('\nGrowth protocol\n(.+?)\n', '\\1', growth_protocol)
-        srp_meta[runs, 'extracted_molecule'] <- gsub('\nExtracted molecule\n(.+?)\n', '\\1', extracted_molecule)
-        srp_meta[runs, 'extraction_protocol'] <- substr(extraction_protocol, 1, nchar(extraction_protocol)-2)
-        srp_meta[runs, 'library_strategy'] <- gsub('\nLibrary strategy\n(.+?)\n', '\\1', library_strategy)
-        srp_meta[runs, 'library_selection'] <- gsub('\nLibrary selection\n(.+?)\n', '\\1', library_selection)
-        srp_meta[runs, 'instrument_model'] <- gsub('\nInstrument model\n(.+?)\n', '\\1', instrument_model)
-        srp_meta[runs, 'description'] <- gsub('\nDescription\n(.+?)\n', '\\1', description)
-        srp_meta[runs, 'data_processing'] <- substr(data_processing, 1, nchar(data_processing)-2)
-        srp_meta[runs, 'platform_id'] <- gsub('\nPlatform ID\n(.+?)\n', '\\1', platform_id)
+        for (col in cols) srp_meta[runs, col] <- vals[col]
 
         srp_meta[runs, 'library_source'] <- gsub('<LIBRARY_SOURCE>(.+?)</LIBRARY_SOURCE>', '\\1', library_source)
         srp_meta[runs, 'library_layout'] <- library_layout
