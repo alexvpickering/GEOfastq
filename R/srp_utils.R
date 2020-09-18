@@ -214,7 +214,10 @@ get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('ftp',
 
     for (srr_name in srr_names) {
       # try to get fastq from ebi
-      res <- c(res, get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1]))
+      res <- c(
+        res,
+        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1]),
+                 error = function(e) return(1)))
     }
     names(res) <- srr_names
   }
@@ -234,12 +237,18 @@ get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('ftp',
 #'
 get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ftp')) {
   url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/.')
-  fnames <- unlist(strsplit(RCurl::getURL(url, dirlistonly = TRUE), '\n'))
+  resp <- RCurl::getURL(url)
+  resp <- strsplit(resp, '\n')[[1]]
+  resp <- strsplit(resp, ' +')
+  fnames <- sapply(resp, `[`, 9)
+  fsizes <- sapply(resp, `[`, 5)
+  fnames <- unlist(strsplit(RCurl::getURL(url), '\n'))
 
   if (method[1] == 'aspera') {
     ascp_path <- system('which ascp', intern = TRUE)
     ascp_pubkey <- gsub('bin/ascp$', 'etc/asperaweb_id_dsa.openssh', ascp_path)
 
+    # only overwrite if different from source
     ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
     files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     res <- ascpR(ascpCMD, files, gse_dir)
@@ -247,7 +256,13 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
   } else if (method[1] == 'ftp') {
     files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     for (i in seq_along(files)) {
-      res <- download.file(files[i], file.path(gse_dir, fnames[i]))
+      # check for existing file with same size
+      destfile <- file.path(gse_dir, fnames[i])
+      if (file.exists(destfile) &&
+          file.size(destfile) == fsizes[i])
+        res <- 0
+      else
+        res <- download.file(files[i], file.path(gse_dir, fnames[i]))
     }
   }
   return(res)
