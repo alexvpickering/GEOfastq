@@ -233,6 +233,13 @@
       "Repository": "CRAN",
       "Hash": "64517a7bd4e736d7a804e813db1d057c"
     },
+    "plyr": {
+      "Package": "plyr",
+      "Version": "1.8.6",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "582eebdea54cacf5697f995ab09e361b"
+    },
     "prettyunits": {
       "Package": "prettyunits",
       "Version": "1.1.1",

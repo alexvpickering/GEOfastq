@@ -15,4 +15,5 @@ Imports:
   stringr (>= 1.4.0),
   RCurl (>= 1.95.4.12),
   doParallel(>= 1.0.15),
-  foreach (>= 1.5.0)
+  foreach (>= 1.5.0),
+  plyr (>= 1.8.6)

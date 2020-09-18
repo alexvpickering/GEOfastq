@@ -63,10 +63,10 @@ crawl_gsms <- function(gsm_names) {
   nsamp <- length(gsm_names)
   cat(nsamp, 'GSMs to process\n')
 
-  cl <- parallel::makeCluster(nsamp)
+  cl <- parallel::makeCluster(min(50, nsamp))
   doParallel::registerDoParallel(cl)
 
-  srp_meta <- foreach::foreach(j=1:nsamp, .combine = rbind) %dopar% {
+  srp_meta <- foreach::foreach(j=1:nsamp, .combine = plyr::rbind.fill) %dopar% {
 
     # save in srp_meta
     srp_meta <- data.frame(stringsAsFactors = FALSE)
@@ -183,11 +183,11 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.
 #' @param data_dir Path to folder that \code{gse_name} folder will be created in.
 #' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
-#'  ascp command line utility to be on your path. \code{'ftp'} is recommended if multiple fastqs are required as
+#'  ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
 #'  a parallel for loop can give speeds comparable to \code{'aspera'}.
 #'
 #' @export
-get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('aspera', 'ftp')) {
+get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('ftp', 'aspera')) {
 
   # setup gse directory
   gse_dir  <- file.path(data_dir, gse_name)
@@ -200,16 +200,25 @@ get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('asper
   srr_names_list <- lapply(gsm_names, function(gsm_name) srr_names[srp_meta$gsm_name %in% gsm_name])
   names(srr_names_list) <- gsm_names
 
-  # download everything
-  for (i in seq_along(srr_names_list)) {
+  # parallel if ftp otherwise sequential
+  method <- method[1]
+  ngsm <- length(gsm_names)
+  npar <- ifelse(method == 'ftp', min(50, ngsm), 1)
+  cl <- parallel::makeCluster(npar)
+  doParallel::registerDoParallel(cl)
+
+  res <- foreach::foreach(i=1:ngsm, .combine = c) %dopar% {
+    # download everything
     srr_names <- srr_names_list[[i]]
+    res <- c()
 
     for (srr_name in srr_names) {
       # try to get fastq from ebi
-      get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1])
+      res <- c(res, get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1]))
     }
+    names(res) <- srr_names
   }
-  return(NULL)
+  return(res)
 }
 
 #' Download fastqs from EBI
@@ -233,14 +242,15 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
 
     ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
     files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
-    ascpR(ascpCMD, files, gse_dir)
+    res <- ascpR(ascpCMD, files, gse_dir)
 
   } else if (method[1] == 'ftp') {
     files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     for (i in seq_along(files)) {
-      download.file(files[i], file.path(gse_dir, fnames[i]))
+      res <- download.file(files[i], file.path(gse_dir, fnames[i]))
     }
   }
+  return(res)
 }
 
 #' Utility function to run aspera
