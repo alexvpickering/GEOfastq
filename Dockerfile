@@ -24,5 +24,6 @@ RUN R -e 'options(renv.consent = TRUE); renv::restore()' && \
 ENV PATH="/root/.aspera/connect/bin:$PATH"
 
 # save image to a tar.gz file and upload to s3
+# sudo docker build -t geofastq:latest .
 # sudo docker save geofastq:latest | gzip > geofastq_latest.tar.gz
 # aws s3 cp geofastq_latest.tar.gz s3://drugseqr/geofastq_latest.tar.gz

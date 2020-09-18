@@ -9,9 +9,11 @@ install.packages('remotes')
 remotes::install_github('alexvpickering/GEOfastq')
 ```
 
-### Install Aspera Connect
+### Install Aspera Connect (optional)
 
-`GEOfastq` uses [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) because it is faster than ftp. Download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
+`GEOfastq` can use [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) to download fastqs. It is faster than ftp for large single-file downloads (single-cell fastqs). `GEOfastq` runs ftp in parallel making this less important for many-sample downloads (bulk fastqs). 
+
+To download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
 
 ```bash
 wget https://download.asperasoft.com/download/sw/connect/3.9.6/ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
@@ -65,7 +67,8 @@ First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get stud
 
 ```R
 gse_name <- 'GSE117570'
-srp_meta <- GEOfastq::get_srp_meta(gse_name)
+gsm_names <- GEOfastq::get_gsms(gse_name)
+srp_meta <- GEOfastq::crawl_gsms(gse_name)
 ```
 
 Next, subset `srp_meta` to samples that you want, then download:
@@ -75,5 +78,5 @@ srp_meta <- srp_meta[srp_meta$source_name == 'Adjacent normal', ]
 GEOfastq::get_fastqs(gse_name, srp_meta)
 ```
 
-That's all folks!
+That's all folks! GOTO: `kallisto`?
 

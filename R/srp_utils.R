@@ -1,25 +1,27 @@
 
-#' Get metadata needed to download RNA-seq data for GSE
+#' Get GSMs needed to download RNA-seq data for a series
 #'
-#' Goes to GSE page to get GSMs then goes to each GSM page to get SRX then to each SRX page to get some more metadata.
+#' Goes to a series GSE page to get sample GSMs.
 #'
 #' @param gse_name GEO study name to get metadata for
-#' @param data_dir Path that folder with \code{gse_name} will be created in to save result.
 #'
-#' @return \code{data.frame} with sample annotations for each GSE. Get's saved as \emph{data_dir/gse_name/gse_name.rds}.
+#' @return Character vector of sample GSMs for the series \code{gse_name}
 #' @export
 #'
 #' @examples
 #'
-#' srp_meta <- get_srp_meta('GSE117570')
-get_srp_meta <- function(gse_name, data_dir = getwd()) {
+#' gsm_names <- get_gsms('GSE111459')
+#'
+get_gsms <- function(gse_name, data_dir = NULL) {
 
-  gse_dir <- file.path(data_dir, gse_name)
-  if (!dir.exists(gse_dir)) dir.create(gse_dir)
+  if (!is.null(data_dir)) {
+    gse_dir <- file.path(data_dir, gse_name)
+    if (!dir.exists(gse_dir)) dir.create(gse_dir)
 
-  # load srp meta from file if exists
-  srp_meta_path <- file.path(gse_dir, 'srp_meta.rds')
-  if (file.exists(srp_meta_path)) return(readRDS(srp_meta_path))
+    # load srp meta from file if exists
+    srp_meta_path <- file.path(gse_dir, 'srp_meta.rds')
+    if (file.exists(srp_meta_path)) return(readRDS(srp_meta_path))
+  }
 
   # get GSM names ----
 
@@ -38,16 +40,38 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
   samples <- stringr::str_extract(gse_text, stringr::regex('\nSamples.+?\nRelations', dotall = TRUE))
   samples <- stringr::str_extract_all(samples, 'GSM\\d+')[[1]]
 
-  # get SRX for each GSM ----
+  return(samples)
+}
 
-  # save in srp_meta
-  srp_meta <- data.frame(stringsAsFactors = FALSE)
+#' Crawls SRX pages for each GSM to get metadata.
+#'
+#' Goes to each GSM page to get SRX then to each SRX page to get some more metadata.
+#'
+#'
+#' @param samples Character vector of GSMs.
+#' @importFrom foreach %dopar%
+#'
+#' @return data.frame
+#' @export
+#'
+#' @examples
+#' gsm_names <- get_gsms('GSE111459')
+#' srp_meta <- crawl_gsms(gsm_names)
+#'
+crawl_gsms <- function(gsm_names) {
 
-  cat(length(samples), 'GSMs to process\n')
-  for (j in 1:length(samples)) {
-    cat('Working on GSM number', j, '\n')
+  nsamp <- length(gsm_names)
+  cat(nsamp, 'GSMs to process\n')
 
-    gsm_name <- samples[j]
+  cl <- parallel::makeCluster(nsamp)
+  doParallel::registerDoParallel(cl)
+
+  srp_meta <- foreach::foreach(j=1:nsamp, .combine = rbind) %dopar% {
+
+    # save in srp_meta
+    srp_meta <- data.frame(stringsAsFactors = FALSE)
+
+    gsm_name <- gsm_names[j]
     # get html text
     gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name, '&targ=self&form=text&view=full')
     gsm_html <- NULL
@@ -92,6 +116,7 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
       library_layout <- stringr::str_extract(library_layout, 'SINGLE|PAIRED')
 
       if (length(runs)) {
+
         # add info to srp_meta
         srp_meta[runs, 'run'] <- runs
         srp_meta[runs, 'experiment'] <- experiment
@@ -105,9 +130,9 @@ get_srp_meta <- function(gse_name, data_dir = getwd()) {
         srp_meta[runs, 'ncbi_dir'] <- sapply(runs, get_dldir, 'ncbi')
       }
     }
+    return(srp_meta)
   }
-
-  saveRDS(srp_meta, srp_meta_path)
+  parallel::stopCluster(cl)
   return(srp_meta)
 }
 
@@ -157,6 +182,9 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' @param gse_name GSE name. Will create folder with this name in \code{data_dir} and download data there.
 #' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.
 #' @param data_dir Path to folder that \code{gse_name} folder will be created in.
+#' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
+#'  ascp command line utility to be on your path. \code{'ftp'} is recommended if multiple fastqs are required as
+#'  a parallel for loop can give speeds comparable to \code{'aspera'}.
 #'
 #' @export
 get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('aspera', 'ftp')) {

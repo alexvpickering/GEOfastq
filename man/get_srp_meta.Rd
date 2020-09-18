@@ -4,12 +4,13 @@
 \alias{get_srp_meta}
 \title{Get metadata needed to download RNA-seq data for GSE}
 \usage{
-get_srp_meta(gse_name, data_dir = getwd())
+get_srp_meta(gse_name, data_dir = NULL)
 }
 \arguments{
 \item{gse_name}{GEO study name to get metadata for}
 
-\item{data_dir}{Path that folder with \code{gse_name} will be created in to save result.}
+\item{data_dir}{Path that folder with \code{gse_name} will be created in to save result. If \code{NULL} (default), results
+will not be saved.}
 }
 \value{
 \code{data.frame} with sample annotations for each GSE. Get's saved as \emph{data_dir/gse_name/gse_name.rds}.
@@ -19,5 +20,5 @@ Goes to GSE page to get GSMs then goes to each GSM page to get SRX then to each 
 }
 \examples{
 
-srp_meta <- get_srp_meta('GSE117570')
+srp_meta <- get_srp_meta('GSE111459')
 }

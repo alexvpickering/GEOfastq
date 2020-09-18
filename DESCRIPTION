@@ -8,9 +8,11 @@ Description: Goes down the rabbit hole from GEO to ENA to get the links to downl
 License: MIT
 Encoding: UTF-8
 LazyData: true
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.1
 Imports:
   xml2 (>= 1.2.2),
   rvest (>= 0.3.4),
   stringr (>= 1.4.0),
-  RCurl (>= 1.95.4.12)
+  RCurl (>= 1.95.4.12),
+  doParallel(>= 1.0.15),
+  foreach (>= 1.5.0)
