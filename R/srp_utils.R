@@ -133,6 +133,7 @@ crawl_gsms <- function(gsm_names) {
     return(srp_meta)
   }
   parallel::stopCluster(cl)
+  row.names(srp_meta) <- srp_meta$run
   return(srp_meta)
 }
 
@@ -216,10 +217,11 @@ get_fastqs <- function(gse_name, srp_meta, data_dir = getwd(), method = c('ftp',
       # try to get fastq from ebi
       res <- c(
         res,
-        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method[1]),
+        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method),
                  error = function(e) return(1)))
     }
     names(res) <- srr_names
+    return(res)
   }
   return(res)
 }
@@ -242,7 +244,6 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
   resp <- strsplit(resp, ' +')
   fnames <- sapply(resp, `[`, 9)
   fsizes <- sapply(resp, `[`, 5)
-  fnames <- unlist(strsplit(RCurl::getURL(url), '\n'))
 
   if (method[1] == 'aspera') {
     ascp_path <- system('which ascp', intern = TRUE)
@@ -258,11 +259,8 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
     for (i in seq_along(files)) {
       # check for existing file with same size
       destfile <- file.path(gse_dir, fnames[i])
-      if (file.exists(destfile) &&
-          file.size(destfile) == fsizes[i])
-        res <- 0
-      else
-        res <- download.file(files[i], file.path(gse_dir, fnames[i]))
+      if (file.exists(destfile) && file.size(destfile) == fsizes[i]) res <- 0
+      else res <- download.file(files[i], destfile)
     }
   }
   return(res)
