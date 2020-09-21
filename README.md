@@ -75,7 +75,7 @@ Next, subset `srp_meta` to samples that you want, then download:
 
 ```R
 srp_meta <- srp_meta[srp_meta$source_name == 'Adjacent normal', ]
-GEOfastq::get_fastqs(gse_name, srp_meta)
+GEOfastq::get_fastqs(srp_meta, data_dir = tempdir())
 ```
 
 That's all folks! GOTO: `kallisto`?

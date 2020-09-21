@@ -4,14 +4,12 @@
 \alias{get_fastqs}
 \title{Download and fasterq-dump RNA-seq data from GEO}
 \usage{
-get_fastqs(gse_name, srp_meta, data_dir = getwd(), method = c("ftp", "aspera"))
+get_fastqs(srp_meta, data_dir, method = c("ftp", "aspera"))
 }
 \arguments{
-\item{gse_name}{GSE name. Will create folder with this name in \code{data_dir} and download data there.}
-
 \item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.}
 
-\item{data_dir}{Path to folder that \code{gse_name} folder will be created in.}
+\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 
 \item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as

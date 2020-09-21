@@ -4,7 +4,7 @@
 \alias{get_gsms}
 \title{Get GSMs needed to download RNA-seq data for a series}
 \usage{
-get_gsms(gse_name, data_dir = NULL)
+get_gsms(gse_name)
 }
 \arguments{
 \item{gse_name}{GEO study name to get metadata for}
