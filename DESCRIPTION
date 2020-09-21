@@ -2,7 +2,7 @@ Package: GEOfastq
 Type: Package
 Title: Downloads Fastqs With GSE Accessions
 Version: 0.1.0
-Author: Who wrote it
+Author: Alex Pickering
 Maintainer: Alex Pickering <alexvpickering@gmail.com>
 Description: Goes down the rabbit hole from GEO to ENA to get the links to download fastq.gz files.
 License: MIT
