@@ -4,12 +4,12 @@
 \alias{get_fastqs}
 \title{Download and fasterq-dump RNA-seq data from GEO}
 \usage{
-get_fastqs(srp_meta, data_dir, max.workers = 50, method = c("ftp", "aspera"))
+get_fastqs(srp_meta, gse_dir, max.workers = 50, method = c("ftp", "aspera"))
 }
 \arguments{
 \item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
 
-\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
+\item{gse_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 
 \item{max.workers}{Maximum number of parallel workers to split task betweem}
 

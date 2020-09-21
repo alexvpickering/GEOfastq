@@ -171,17 +171,17 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' First tries to get RNA-Seq fastq files from EBI. If not successful, gets SRA from GEO and converts to fastq.gz.
 #'
 #' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.
-#' @param data_dir Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.
+#' @param gse_dir Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.
 #' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 #'  ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
 #'  a parallel for loop can give speeds comparable to \code{'aspera'}.
 #' @inheritParams crawl_gsms
 #'
 #' @export
-get_fastqs <- function(srp_meta, data_dir, max.workers = 50, method = c('ftp', 'aspera')) {
+get_fastqs <- function(srp_meta, gse_dir, max.workers = 50, method = c('ftp', 'aspera')) {
 
   # setup gse directory
-  dir.create(data_dir)
+  dir.create(gse_dir)
 
   # seperate runs based on GSM (can be multiple per GSM)
   srr_names <- srp_meta$run
@@ -205,7 +205,7 @@ get_fastqs <- function(srp_meta, data_dir, max.workers = 50, method = c('ftp', '
       # try to get fastq from ebi
       res <- c(
         res,
-        tryCatch(get_ebi_fastqs(srp_meta, srr_name, data_dir, method = method),
+        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method),
                  error = function(e) return(1)))
     }
     names(res) <- srr_names
@@ -220,13 +220,13 @@ get_fastqs <- function(srp_meta, data_dir, max.workers = 50, method = c('ftp', '
 #'
 #' @param srp_meta Result from \code{get_srp_meta}.
 #' @param srr_name Run accession as string.
-#' @param data_dir Folder to save fastq.gz files in
+#' @param gse_dir Folder to save fastq.gz files in
 #' @param method One of either \code{'aspera'} (Default) or \code{'ftp'}.
 #'
 #' @export
 #'
-get_ebi_fastqs <- function(srp_meta, srr_name, data_dir, method = c('aspera', 'ftp')) {
-  url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/.')
+get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ftp')) {
+  url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/')
   resp <- RCurl::getURL(url)
   resp <- strsplit(resp, '\n')[[1]]
   resp <- strsplit(resp, ' +')
@@ -240,13 +240,13 @@ get_ebi_fastqs <- function(srp_meta, srr_name, data_dir, method = c('aspera', 'f
     # only overwrite if different from source
     ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
     files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
-    res <- ascpR(ascpCMD, files, data_dir)
+    res <- ascpR(ascpCMD, files, gse_dir)
 
   } else if (method[1] == 'ftp') {
     files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     for (i in seq_along(files)) {
       # check for existing file with same size
-      destfile <- file.path(data_dir, fnames[i])
+      destfile <- file.path(gse_dir, fnames[i])
       if (file.exists(destfile) && file.size(destfile) == fsizes[i]) res <- 0
       else res <- download.file(files[i], destfile)
     }
