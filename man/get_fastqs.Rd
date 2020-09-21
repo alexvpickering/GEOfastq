@@ -7,7 +7,7 @@
 get_fastqs(srp_meta, data_dir, method = c("ftp", "aspera"))
 }
 \arguments{
-\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.}
+\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
 
 \item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 

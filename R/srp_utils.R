@@ -169,7 +169,7 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #'
 #' First tries to get RNA-Seq fastq files from EBI. If not successful, gets SRA from GEO and converts to fastq.gz.
 #'
-#' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.
+#' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.
 #' @param data_dir Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.
 #' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 #'  ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
