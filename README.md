@@ -51,8 +51,7 @@ To install `GEOfastq` and Aspera Connect from a pre-built docker image:
 
 ```bash
 # retrieve pre-built geofastq docker image
-wget https://drugseqr.s3.us-east-2.amazonaws.com/geofastq_latest.tar.gz
-sudo docker load < geofastq_latest.tar.gz
+docker pull alexvpickering/geofastq
 
 # run interactive container with host portion of `-v host:container` mounted where you want to persist data to
 sudo docker run -it --rm \
