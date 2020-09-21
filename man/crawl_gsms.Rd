@@ -4,9 +4,11 @@
 \alias{crawl_gsms}
 \title{Crawls SRX pages for each GSM to get metadata.}
 \usage{
-crawl_gsms(gsm_names)
+crawl_gsms(gsm_names, max.workers = 50)
 }
 \arguments{
+\item{max.workers}{Maximum number of parallel workers to split task betweem}
+
 \item{samples}{Character vector of GSMs.}
 }
 \value{

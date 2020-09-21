@@ -38,6 +38,7 @@ get_gsms <- function(gse_name) {
 #'
 #'
 #' @param samples Character vector of GSMs.
+#' @param max.workers Maximum number of parallel workers to split task betweem
 #' @importFrom foreach %dopar%
 #'
 #' @return data.frame
@@ -47,12 +48,12 @@ get_gsms <- function(gse_name) {
 #' gsm_names <- get_gsms('GSE111459')
 #' srp_meta <- crawl_gsms(gsm_names)
 #'
-crawl_gsms <- function(gsm_names) {
+crawl_gsms <- function(gsm_names, max.workers = 50) {
 
   nsamp <- length(gsm_names)
   cat(nsamp, 'GSMs to process\n')
 
-  cl <- parallel::makeCluster(min(50, nsamp))
+  cl <- parallel::makeCluster(min(max.workers, nsamp))
   doParallel::registerDoParallel(cl)
 
   srp_meta <- foreach::foreach(j=1:nsamp, .combine = plyr::rbind.fill) %dopar% {
@@ -174,9 +175,10 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 #'  ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
 #'  a parallel for loop can give speeds comparable to \code{'aspera'}.
+#' @inheritParams crawl_gsms
 #'
 #' @export
-get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera')) {
+get_fastqs <- function(srp_meta, data_dir, max.workers = 50, method = c('ftp', 'aspera')) {
 
   # setup gse directory
   dir.create(data_dir)
@@ -190,7 +192,7 @@ get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera')) {
   # parallel if ftp otherwise sequential
   method <- method[1]
   ngsm <- length(gsm_names)
-  npar <- ifelse(method == 'ftp', min(50, ngsm), 1)
+  npar <- ifelse(method == 'ftp', min(max.workers, ngsm), 1)
   cl <- parallel::makeCluster(npar)
   doParallel::registerDoParallel(cl)
 
