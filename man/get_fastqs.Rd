@@ -4,7 +4,13 @@
 \alias{get_fastqs}
 \title{Download and fasterq-dump RNA-seq data from GEO}
 \usage{
-get_fastqs(srp_meta, gse_dir, max.workers = 50, method = c("ftp", "aspera"))
+get_fastqs(
+  srp_meta,
+  gse_dir,
+  max.workers = 50,
+  method = c("ftp", "aspera"),
+  max_rate = "1g"
+)
 }
 \arguments{
 \item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
@@ -16,6 +22,9 @@ get_fastqs(srp_meta, gse_dir, max.workers = 50, method = c("ftp", "aspera"))
 \item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
 a parallel for loop can give speeds comparable to \code{'aspera'}.}
+
+\item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
+try reducing the default \code{'1g'} down to e.g. \code{'300m'}.}
 }
 \description{
 First tries to get RNA-Seq fastq files from EBI. If not successful, gets SRA from GEO and converts to fastq.gz.

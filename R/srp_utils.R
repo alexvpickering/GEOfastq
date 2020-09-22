@@ -175,10 +175,13 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 #'  ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
 #'  a parallel for loop can give speeds comparable to \code{'aspera'}.
+#' @param max_rate Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
+#'  try reducing the default \code{'1g'} down to e.g. \code{'300m'}.
+#'
 #' @inheritParams crawl_gsms
 #'
 #' @export
-get_fastqs <- function(srp_meta, gse_dir, max.workers = 50, method = c('ftp', 'aspera')) {
+get_fastqs <- function(srp_meta, gse_dir, max.workers = 50, method = c('ftp', 'aspera'), max_rate = '1g') {
 
   # setup gse directory
   dir.create(gse_dir)
@@ -205,7 +208,7 @@ get_fastqs <- function(srp_meta, gse_dir, max.workers = 50, method = c('ftp', 'a
       # try to get fastq from ebi
       res <- c(
         res,
-        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method),
+        tryCatch(get_ebi_fastqs(srp_meta, srr_name, gse_dir, method = method, max_rate = max_rate),
                  error = function(e) return(1)))
     }
     names(res) <- srr_names
@@ -218,14 +221,12 @@ get_fastqs <- function(srp_meta, gse_dir, max.workers = 50, method = c('ftp', 'a
 #'
 #' Much faster to use aspera than ftp
 #'
-#' @param srp_meta Result from \code{get_srp_meta}.
 #' @param srr_name Run accession as string.
-#' @param gse_dir Folder to save fastq.gz files in
-#' @param method One of either \code{'aspera'} (Default) or \code{'ftp'}.
-#'
+#' @inheritParams get_fastqs
+
 #' @export
 #'
-get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ftp')) {
+get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('ftp', 'aspera'), max_rate = '1g') {
   url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/')
   resp <- RCurl::getURL(url)
   resp <- strsplit(resp, '\n')[[1]]
@@ -238,7 +239,7 @@ get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ft
     ascp_pubkey <- gsub('bin/ascp$', 'etc/asperaweb_id_dsa.openssh', ascp_path)
 
     # only overwrite if different from source
-    ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
+    ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l', max_rate, '-P33001 -i', ascp_pubkey)
     files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
     res <- ascpR(ascpCMD, files, gse_dir)
 
