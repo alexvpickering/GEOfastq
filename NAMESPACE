@@ -2,6 +2,8 @@
 
 export(ascpR)
 export(crawl_gsms)
+export(esc)
+export(fix_characteristics)
 export(get_dldir)
 export(get_ebi_fastqs)
 export(get_fastqs)
