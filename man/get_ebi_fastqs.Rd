@@ -7,7 +7,7 @@
 get_ebi_fastqs(
   srp_meta,
   srr_name,
-  gse_dir,
+  data_dir,
   method = c("ftp", "aspera"),
   max_rate = "1g"
 )
@@ -17,7 +17,7 @@ get_ebi_fastqs(
 
 \item{srr_name}{Run accession as string.}
 
-\item{gse_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
+\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 
 \item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
 ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as

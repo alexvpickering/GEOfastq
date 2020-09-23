@@ -6,7 +6,7 @@
 \usage{
 get_fastqs(
   srp_meta,
-  gse_dir,
+  data_dir,
   max.workers = 50,
   method = c("ftp", "aspera"),
   max_rate = "1g"
@@ -15,7 +15,7 @@ get_fastqs(
 \arguments{
 \item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
 
-\item{gse_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
+\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 
 \item{max.workers}{Maximum number of parallel workers to split task betweem}
 
