@@ -1,35 +1,49 @@
+#' Get GSE text from GEO
+#'
+#' @param gse_name  GEO study name to get metadata for
+#'
+#' @return Character vector of lines on GSE record.
+#' @export
+#'
+#' @examples
+#' gse_text <- crawl_gse('GSE111459')
+#'
+crawl_gse <- function(gse_name) {
 
-#' Get GSMs needed to download RNA-seq data for a series
+  # get html text for GSE page
+  gse_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gse_name, "&targ=self&form=text&view=full")
+
+  gse_text <- NULL
+  attempt <- 1
+  while(is.null(gse_text) && attempt <= 3) {
+    con <- url(gse_url)
+    try(gse_text <- readLines(con))
+    if(is.null(gse_text)) Sys.sleep(15)
+    close(con)
+  }
+  return(gse_text)
+}
+
+#' Extract GSMs needed to download RNA-seq data for a series
 #'
-#' Goes to a series GSE page to get sample GSMs.
 #'
-#' @param gse_name GEO study name to get metadata for
+#' @param gse_text GSE text returned from \code{\link{crawl_gse}}
 #'
 #' @return Character vector of sample GSMs for the series \code{gse_name}
 #' @export
 #'
 #' @examples
 #'
-#' gsm_names <- get_gsms('GSE111459')
+#' gse_text <- crawl_gse('GSE111459')
+#' gsm_names <- extract_gsms(gse_text)
 #'
-get_gsms <- function(gse_name) {
-
-  # get html text for GSE page
-  gse_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gse_name)
-
-  gse_html <- NULL
-  attempt <- 1
-  while(is.null(gse_html) && attempt <= 3) {
-    try(gse_html <- xml2::read_html(gse_url))
-    if(is.null(gse_html)) Sys.sleep(15)
-  }
-  gse_text <- rvest::html_text(gse_html)
+extract_gsms <- function(gse_text) {
 
   # GSM names
-  samples <- stringr::str_extract(gse_text, stringr::regex('\nSamples.+?\nRelations', dotall = TRUE))
-  samples <- stringr::str_extract_all(samples, 'GSM\\d+')[[1]]
+  gsm_lines <- grep('^!Series_sample_id', gse_text)
+  gsm_names <- gsub('^!Series_sample_id = (GSM\\d+)$', '\\1', gse_text[gsm_lines])
 
-  return(samples)
+  return(gsm_names)
 }
 
 #' Crawls SRX pages for each GSM to get metadata.
@@ -45,7 +59,8 @@ get_gsms <- function(gse_name) {
 #' @export
 #'
 #' @examples
-#' gsm_names <- get_gsms('GSE111459')
+#' gse_text <- crawl_gse('GSE111459')
+#' gsm_names <- extract_gsms(gse_text)
 #' srp_meta <- crawl_gsms(gsm_names)
 #'
 crawl_gsms <- function(gsm_names, max.workers = 50) {
@@ -64,24 +79,23 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
     gsm_name <- gsm_names[j]
     # get html text
     gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name, '&targ=self&form=text&view=full')
-    gsm_html <- NULL
+    gsm_text <- NULL
     attempt <- 1
-    while(is.null(gsm_html) && attempt <= 3) {
-      try(gsm_html <- xml2::read_html(gsm_url))
-      if(is.null(gsm_html)) Sys.sleep(5)
+    while(is.null(gsm_text) && attempt <= 3) {
+      con <- url(gsm_url)
+      try(gsm_text <- readLines(con))
+      if(is.null(gsm_text)) Sys.sleep(5)
+      close(con)
     }
-    gsm_text <- rvest::html_text(gsm_html)
 
     # get SRA number for this GSM
-    experiment <- stringr::str_extract(gsm_text, 'SRX\\d+\r')
-    experiment <- gsub('(SRX\\d+)\r', '\\1', experiment)
+    has.srx <- grep('!Sample_relation = SRA: .+?SRX\\d+', gsm_text)
+    experiment <- gsub('^.+?(SRX\\d+)$', '\\1', gsm_text[has.srx])
 
-    info <- strsplit(gsm_text, '!Sample_')[[1]]
-    info <- gsub('\r\n', '', info)
-
-    cols <- gsub('^(.+?) = .+?$', '\\1', info)[-1]
+    info <- gsub('^!Sample_', '', gsm_text[-1])
+    cols <- gsub('^(.+?) = .+?$', '\\1', info)
     cols <- make.unique(cols)
-    vals <- gsub('^.+? = (.+?$)', '\\1', info)[-1]
+    vals <- gsub('^.+? = (.+?$)', '\\1', info)
     names(vals) <- cols
 
 

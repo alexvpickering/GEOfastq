@@ -7,11 +7,23 @@
 fix_characteristics(pdata)
 }
 \arguments{
-\item{pdata}{}
+\item{pdata}{Data.frame returned by \code{\link{crawl_gsms}}}
 }
 \value{
-
+\code{pdata} with characteristics columns aligned
 }
 \description{
 Fix overlapping characteristics columns
+}
+\examples{
+
+gse_name <- 'GSE69529'
+gse_text <- crawl_gse(gse_name)
+gsm_names <- extract_gsms(gse_text)
+
+# note characteristics columns misaligned
+srp_meta <- crawl_gsms(gsm_names)
+
+# this fixes them
+srp_meta <- fix_characteristics(srp_meta)
 }

@@ -1,11 +1,22 @@
 #' Fix overlapping characteristics columns
 #'
-#' @param pdata
+#' @param pdata Data.frame returned by \code{\link{crawl_gsms}}
 #'
-#' @return
+#' @return \code{pdata} with characteristics columns aligned
 #' @export
 #'
 #' @examples
+#'
+#' gse_name <- 'GSE69529'
+#' gse_text <- crawl_gse(gse_name)
+#' gsm_names <- extract_gsms(gse_text)
+#'
+#' # note characteristics columns misaligned
+#' srp_meta <- crawl_gsms(gsm_names)
+#'
+#' # this fixes them
+#' srp_meta <- fix_characteristics(srp_meta)
+#
 fix_characteristics <- function(pdata) {
 
   # characteristics column names
@@ -57,12 +68,11 @@ fix_characteristics <- function(pdata) {
 
 #' Preserve escape characters in grep patterns
 #'
-#' @param string
+#' @param string Character vector with pattern
 #'
-#' @return
+#' @return \code{string} with escape characters preserved
 #' @export
 #'
-#' @examples
 esc <- function(string) {
   gsub("([.|()\\^{}+$*?]|\\[|\\])", "\\\\\\1", string)
 }

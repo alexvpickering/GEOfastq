@@ -7,10 +7,10 @@
 esc(string)
 }
 \arguments{
-\item{string}{}
+\item{string}{Character vector with pattern}
 }
 \value{
-
+\code{string} with escape characters preserved
 }
 \description{
 Preserve escape characters in grep patterns

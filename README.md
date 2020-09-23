@@ -66,8 +66,9 @@ First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get stud
 
 ```R
 gse_name <- 'GSE117570'
-gsm_names <- GEOfastq::get_gsms(gse_name)
-srp_meta <- GEOfastq::crawl_gsms(gse_name)
+#' gse_text <- crawl_gse(gse_name)
+#' gsm_names <- extract_gsms(gse_text)
+#' srp_meta <- crawl_gsms(gsm_names)
 ```
 
 Next, subset `srp_meta` to samples that you want, then download:
