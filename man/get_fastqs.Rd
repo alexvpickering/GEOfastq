@@ -2,30 +2,21 @@
 % Please edit documentation in R/srp_utils.R
 \name{get_fastqs}
 \alias{get_fastqs}
-\title{Download and fasterq-dump RNA-seq data from GEO}
+\title{Download and RNA-seq fastq data from EBI}
 \usage{
-get_fastqs(
-  srp_meta,
-  data_dir,
-  max.workers = 50,
-  method = c("ftp", "aspera"),
-  max_rate = "1g"
-)
+get_fastqs(srp_meta, data_dir, method = c("ftp", "aspera"), max_rate = "1g")
 }
 \arguments{
 \item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
 
 \item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
 
-\item{max.workers}{Maximum number of parallel workers to split task betweem}
-
 \item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
-ascp command line utility to be on your path. \code{'ftp'} is recommended if many fastqs are required as
-a parallel for loop can give speeds comparable to \code{'aspera'}.}
+ascp command line utility to be on your path and in the authors experience frequently stalls.}
 
 \item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
-try reducing the default \code{'1g'} down to e.g. \code{'300m'}.}
+reducing the default \code{'1g'} down to e.g. \code{'300m'} may help.}
 }
 \description{
-First tries to get RNA-Seq fastq files from EBI. If not successful, gets SRA from GEO and converts to fastq.gz.
+First tries to get RNA-Seq fastq files from EBI.
 }
