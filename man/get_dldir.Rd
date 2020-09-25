@@ -7,7 +7,7 @@
 get_dldir(srr, type = c("ebi", "ncbi"))
 }
 \arguments{
-\item{srr}{SRR run name}
+\item{srr}{SRR/ERR run name}
 
 \item{type}{Either \code{'ebi'} or \code{'ncbi'}}
 }

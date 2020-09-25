@@ -144,7 +144,7 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
 
 #' Gets part of path to download bulk RNAseq sample from EBI or NCBI
 #'
-#' @param srr SRR run name
+#' @param srr SRR/ERR run name
 #' @param type Either \code{'ebi'} or \code{'ncbi'}
 #'
 #' @return String path used by \code{\link{get_fastqs}}.
@@ -155,7 +155,7 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
   dir1 <- substr(srr, 1, 6)
 
   if (type[1] == 'ebi') {
-    digits  <- gsub('^SRR', '', srr)
+    digits  <- gsub('^SRR|^ERR', '', srr)
     ndigits <- nchar(digits)
 
     if (ndigits == 7) {
@@ -203,7 +203,6 @@ get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate
   srr_names_list <- lapply(gsm_names, function(gsm_name) srr_names[srp_meta$gsm_name %in% gsm_name])
   names(srr_names_list) <- gsm_names
 
-  # parallel if ftp otherwise sequential
   method <- method[1]
   ngsm <- length(gsm_names)
 
