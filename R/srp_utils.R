@@ -59,9 +59,10 @@ extract_gsms <- function(gse_text) {
 #' @export
 #'
 #' @examples
-#' gse_text <- crawl_gse('GSE111459')
-#' gsm_names <- extract_gsms(gse_text)
-#' srp_meta <- crawl_gsms(gsm_names)
+#' srp_meta <- crawl_gsms("GSM3031462")
+#'
+#' # returns NULL because records on dbGAP for privacy reasons
+#' srp_meta <- crawl_gsms("GSM2439650")
 #'
 crawl_gsms <- function(gsm_names, max.workers = 50) {
 
@@ -89,7 +90,10 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
     }
 
     # get SRA number for this GSM
+    # some won't (e.g. submitted to dbGAP for privacy reasons)
     has.srx <- grep('!Sample_relation = SRA: .+?SRX\\d+', gsm_text)
+    if (!length(has.srx)) return(NULL)
+
     experiment <- gsub('^.+?(SRX\\d+)$', '\\1', gsm_text[has.srx])
 
     info <- gsub('^!Sample_', '', gsm_text[-1])

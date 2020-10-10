@@ -18,8 +18,9 @@ data.frame
 Goes to each GSM page to get SRX then to each SRX page to get some more metadata.
 }
 \examples{
-gse_text <- crawl_gse('GSE111459')
-gsm_names <- extract_gsms(gse_text)
-srp_meta <- crawl_gsms(gsm_names)
+srp_meta <- crawl_gsms("GSM3031462")
+
+# returns NULL because records on dbGAP for privacy reasons
+srp_meta <- crawl_gsms("GSM2439650")
 
 }
