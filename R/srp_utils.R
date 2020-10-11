@@ -64,6 +64,9 @@ extract_gsms <- function(gse_text) {
 #' # returns NULL because records on dbGAP for privacy reasons
 #' srp_meta <- crawl_gsms("GSM2439650")
 #'
+#' # example with empty values
+#' srp_meta <- crawl_gsms('GSM4043025')
+#'
 crawl_gsms <- function(gsm_names, max.workers = 50) {
 
   nsamp <- length(gsm_names)
@@ -96,6 +99,8 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
 
     experiment <- gsub('^.+?(SRX\\d+)$', '\\1', gsm_text[has.srx])
 
+    # fix for e.g. GSM4043025 with empty values
+    gsm_text <- gsm_text[gsm_text != ""]
     info <- gsub('^!Sample_', '', gsm_text[-1])
     cols <- gsub('^(.+?) = .+?$', '\\1', info)
     cols <- make.unique(cols)
