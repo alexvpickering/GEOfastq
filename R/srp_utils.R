@@ -195,7 +195,7 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate = '1g') {
 
   # setup fastq directory
-  dir.create(data_dir)
+  dir.create(data_dir, showWarnings = FALSE)
 
   # seperate runs based on GSM (can be multiple per GSM)
   srr_names <- srp_meta$run
