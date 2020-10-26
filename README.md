@@ -11,9 +11,13 @@ remotes::install_github('alexvpickering/GEOfastq')
 
 ### Install Aspera Connect (optional)
 
-`GEOfastq` can use [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) to download fastqs. It is faster than ftp for large single-file downloads (single-cell fastqs).
-
-To download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
+`GEOfastq` can use [aspera
+connect](https://downloads.asperasoft.com/en/downloads/8?list) to download
+fastqs. It is faster than ftp for large single-file downloads (single-cell
+fastqs).
+To download and install it according to the
+[documentation](https://downloads.asperasoft.com/en/documentation/8). For me
+(Fedora 30), this works:
 
 ```bash
 wget https://download.asperasoft.com/download/sw/connect/3.9.6/ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
@@ -53,7 +57,8 @@ To install `GEOfastq` and Aspera Connect from a pre-built docker image:
 # retrieve pre-built geofastq docker image
 docker pull alexvpickering/geofastq
 
-# run interactive container with host portion of `-v host:container` mounted where you want to persist data to
+# run interactive container with host portion of 
+#`-v host:container` mounted where you want to persist data to
 sudo docker run -it --rm \
   -v /srv:/srv \
   geofastq /bin/bash
@@ -62,9 +67,13 @@ sudo docker run -it --rm \
 
 ### Usage
 
-First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get study metadata and corresponding fastq.gz download links on [ENA](https://www.ebi.ac.uk/ena):
+First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get
+study metadata and corresponding fastq.gz download links on
+[ENA](https://www.ebi.ac.uk/ena):
 
 ```R
+library(GEOfastq)
+
 gse_name <- 'GSE117570'
 #' gse_text <- crawl_gse(gse_name)
 #' gsm_names <- extract_gsms(gse_text)
@@ -75,7 +84,7 @@ Next, subset `srp_meta` to samples that you want, then download:
 
 ```R
 srp_meta <- srp_meta[srp_meta$source_name == 'Adjacent normal', ]
-GEOfastq::get_fastqs(srp_meta, data_dir = tempdir())
+get_fastqs(srp_meta, data_dir = tempdir())
 ```
 
 That's all folks! GOTO: `kallisto`?

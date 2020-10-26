@@ -17,3 +17,8 @@ String path used by \code{\link{get_fastqs}}.
 \description{
 Gets part of path to download bulk RNAseq sample from EBI or NCBI
 }
+\examples{
+
+get_dldir('SRR014242')
+
+}

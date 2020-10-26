@@ -3,5 +3,6 @@
 export(crawl_gse)
 export(crawl_gsms)
 export(extract_gsms)
+export(get_dldir)
 export(get_fastqs)
 importFrom(foreach,"%dopar%")

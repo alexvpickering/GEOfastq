@@ -23,7 +23,7 @@ transfer rate. The default is \code{'300m'}.}
 }
 \value{
 Named vector of integer return codes from \code{ascp} or
-  \code{download.file}. Names are SRR runs.
+\code{download.file}. Names are SRR runs.
 }
 \description{
 First tries to get RNA-Seq fastq files from EBI.
