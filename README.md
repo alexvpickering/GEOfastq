@@ -11,7 +11,7 @@ remotes::install_github('alexvpickering/GEOfastq')
 
 ### Install Aspera Connect (optional)
 
-`GEOfastq` can use [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) to download fastqs. It is faster than ftp for large single-file downloads (single-cell fastqs). `GEOfastq` runs ftp in parallel making this less important for many-sample downloads (bulk fastqs). 
+`GEOfastq` can use [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) to download fastqs. It is faster than ftp for large single-file downloads (single-cell fastqs).
 
 To download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
 
@@ -42,7 +42,7 @@ After restarting Rstudio, to confirm things are set up properly:
 Sys.getenv('PATH')
 
 # should print info about Aspera Connect
-system('ascp --version')
+system2('ascp', '--version')
 ```
 
 ### Install docker image

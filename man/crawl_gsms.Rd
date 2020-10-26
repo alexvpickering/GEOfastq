@@ -7,20 +7,24 @@
 crawl_gsms(gsm_names, max.workers = 50)
 }
 \arguments{
-\item{max.workers}{Maximum number of parallel workers to split task betweem}
+\item{gsm_names}{Character vector of GSMs.}
 
-\item{samples}{Character vector of GSMs.}
+\item{max.workers}{Maximum number of parallel workers to split task betweem}
 }
 \value{
 data.frame
 }
 \description{
-Goes to each GSM page to get SRX then to each SRX page to get some more metadata.
+Goes to each GSM page to get SRX then to each SRX page to get some more
+metadata.
 }
 \examples{
 srp_meta <- crawl_gsms("GSM3031462")
 
 # returns NULL because records on dbGAP for privacy reasons
 srp_meta <- crawl_gsms("GSM2439650")
+
+# example with empty values
+srp_meta <- crawl_gsms('GSM4043025')
 
 }

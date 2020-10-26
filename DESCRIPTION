@@ -1,11 +1,11 @@
 Package: GEOfastq
 Type: Package
 Title: Downloads Fastqs With GSE Accessions
-Version: 0.6.3
+Version: 0.6.4
 Author: Alex Pickering
 Maintainer: Alex Pickering <alexvpickering@gmail.com>
 Description: Goes down the rabbit hole from GEO to ENA to get the links to download fastq.gz files.
-License: MIT
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
@@ -17,3 +17,12 @@ Imports:
   doParallel(>= 1.0.15),
   foreach (>= 1.5.0),
   plyr (>= 1.8.6)
+Suggests:
+    BiocCheck,
+    roxygen2,
+    knitr,
+    rmarkdown
+biocViews:
+  RNASeq,
+  DataImport
+VignetteBuilder: knitr

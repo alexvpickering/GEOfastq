@@ -11,7 +11,9 @@
 crawl_gse <- function(gse_name) {
 
   # get html text for GSE page
-  gse_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gse_name, "&targ=self&form=text&view=full")
+  gse_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=",
+                     gse_name,
+                     "&targ=self&form=text&view=full")
 
   gse_text <- NULL
   attempt <- 1
@@ -48,10 +50,11 @@ extract_gsms <- function(gse_text) {
 
 #' Crawls SRX pages for each GSM to get metadata.
 #'
-#' Goes to each GSM page to get SRX then to each SRX page to get some more metadata.
+#' Goes to each GSM page to get SRX then to each SRX page to get some more
+#' metadata.
 #'
 #'
-#' @param samples Character vector of GSMs.
+#' @param gsm_names Character vector of GSMs.
 #' @param max.workers Maximum number of parallel workers to split task betweem
 #' @importFrom foreach %dopar%
 #'
@@ -68,6 +71,8 @@ extract_gsms <- function(gse_text) {
 #' srp_meta <- crawl_gsms('GSM4043025')
 #'
 crawl_gsms <- function(gsm_names, max.workers = 50) {
+  # for R CMD Check
+  j = NULL
 
   nsamp <- length(gsm_names)
   cat(nsamp, 'GSMs to process\n')
@@ -75,14 +80,18 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
   cl <- parallel::makeCluster(min(max.workers, nsamp))
   doParallel::registerDoParallel(cl)
 
-  srp_meta <- foreach::foreach(j=1:nsamp, .combine = plyr::rbind.fill) %dopar% {
+  srp_meta <- foreach::foreach(j = seq_len(nsamp),
+                               .combine = plyr::rbind.fill) %dopar% {
 
     # save in srp_meta
     srp_meta <- data.frame(stringsAsFactors = FALSE)
 
     gsm_name <- gsm_names[j]
     # get html text
-    gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name, '&targ=self&form=text&view=full')
+    gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=",
+                       gsm_name,
+                       '&targ=self&form=text&view=full')
+
     gsm_text <- NULL
     attempt <- 1
     while(is.null(gsm_text) && attempt <= 3) {
@@ -111,7 +120,9 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
     if (!is.na(experiment)) {
 
       # extract SRR runs info -----
-      srx_url  <- paste0("https://www.ncbi.nlm.nih.gov/sra/", experiment, '[accn]?report=FullXml')
+      srx_url  <- paste0("https://www.ncbi.nlm.nih.gov/sra/",
+                         experiment,
+                         '[accn]?report=FullXml')
 
       srx_html <- NULL
       attempt <- 1
@@ -157,7 +168,7 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
 #' @param type Either \code{'ebi'} or \code{'ncbi'}
 #'
 #' @return String path used by \code{\link{get_fastqs}}.
-#' @export
+#'
 get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 
 
@@ -193,15 +204,31 @@ get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 #'
 #' First tries to get RNA-Seq fastq files from EBI.
 #'
-#' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.
-#' @param data_dir Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.
-#' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
-#'  ascp command line utility to be on your path and in the authors experience frequently stalls.
-#' @param max_rate Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
-#'  reducing the default \code{'1g'} down to e.g. \code{'300m'} may help.
+#' @param srp_meta \code{data.frame} with SRP meta info. Returned from
+#'   \code{\link{crawl_gsms}}.
+#' @param data_dir Path to folder that fastq files will be downloaded to. Will
+#'   be created if doesn't exist.
+#' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is
+#'   generally faster but requires the
+#'   ascp command line utility to be on your path and in the authors experience
+#'   frequently stalls.
+#' @param max_rate Used when \code{method = 'aspera'} only. Sets the target
+#'   transfer rate. The default is \code{'300m'}.
 #'
+#' @return Named vector of integer return codes from \code{ascp} or
+#'   \code{download.file}. Names are SRR runs.
 #' @export
-get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate = '1g') {
+#'
+#' @examples
+#' gsm_name <- 'GSM3926903'
+#' srp_meta <- crawl_gsms(gsm_name)
+#' data_dir <- tempdir()
+#' res <- get_fastqs(srp_meta, data_dir)
+#'
+get_fastqs <- function(srp_meta,
+                       data_dir,
+                       method = c('ftp', 'aspera'),
+                       max_rate = '1g') {
 
   # setup fastq directory
   dir.create(data_dir, showWarnings = FALSE)
@@ -209,14 +236,16 @@ get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate
   # seperate runs based on GSM (can be multiple per GSM)
   srr_names <- srp_meta$run
   gsm_names <- unique(srp_meta$gsm_name)
-  srr_names_list <- lapply(gsm_names, function(gsm_name) srr_names[srp_meta$gsm_name %in% gsm_name])
+  srr_names_list <- lapply(gsm_names,
+                           function(gsm_name)
+                             srr_names[srp_meta$gsm_name %in% gsm_name])
   names(srr_names_list) <- gsm_names
 
   method <- method[1]
   ngsm <- length(gsm_names)
 
   res <- c()
-  for (i in 1:ngsm) {
+  for (i in seq_len(ngsm)) {
     # download everything
     srr_names <- srr_names_list[[i]]
     resi <- c()
@@ -225,7 +254,11 @@ get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate
       # try to get fastq from ebi
       resi <- c(
         resi,
-        tryCatch(get_ebi_fastqs(srp_meta, srr_name, data_dir, method = method, max_rate = max_rate),
+        tryCatch(get_ebi_fastqs(srp_meta,
+                                srr_name,
+                                data_dir,
+                                method = method,
+                                max_rate = max_rate),
                  error = function(e) return(1)))
     }
     names(resi) <- srr_names
@@ -240,11 +273,17 @@ get_fastqs <- function(srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate
 #'
 #' @param srr_name Run accession as string.
 #' @inheritParams get_fastqs
-
-#' @export
 #'
-get_ebi_fastqs <- function(srp_meta, srr_name, data_dir, method = c('ftp', 'aspera'), max_rate = '1g') {
-  url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/')
+#' @return Integer return code from ascp or \code{download.file}.
+#'
+get_ebi_fastqs <- function(srp_meta,
+                           srr_name,
+                           data_dir,
+                           method = c('ftp', 'aspera'),
+                           max_rate = '300m') {
+  url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/',
+                srp_meta[srr_name, 'ebi_dir'],
+                '/')
   resp <- RCurl::getURL(url)
   resp <- strsplit(resp, '\n')[[1]]
   resp <- strsplit(resp, ' +')
@@ -252,25 +291,31 @@ get_ebi_fastqs <- function(srp_meta, srr_name, data_dir, method = c('ftp', 'aspe
   fsizes <- sapply(resp, `[`, 5)
 
   if (method[1] == 'aspera') {
-    ascp_path <- system('which ascp', intern = TRUE)
+    ascp_path <- system2('which', 'ascp', stdout = TRUE)
     ascp_pubkey <- gsub('bin/ascp$', 'etc/asperaweb_id_dsa.openssh', ascp_path)
 
     # only overwrite if different from source
-    ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l', max_rate, '-P33001 -i', ascp_pubkey)
-    files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+    ascp_args <- c('--overwrite=diff', '-k1', '-QT', '-l',
+                   max_rate, '-P33001', '-i', ascp_pubkey)
+
+    files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/',
+                    srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+
     for (i in seq_along(files)) {
       destfile <- file.path(data_dir, fnames[i])
       if (file.exists(destfile) && file.size(destfile) == fsizes[i]) res <- 0
-      else res <- ascpR(ascpCMD, files[i], data_dir)
+      else res <- ascpR(ascp_args, files[i], data_dir)
     }
 
   } else if (method[1] == 'ftp') {
-    files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+    files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/',
+                    srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+
     for (i in seq_along(files)) {
       # check for existing file with same size
       destfile <- file.path(data_dir, fnames[i])
       if (file.exists(destfile) && file.size(destfile) == fsizes[i]) res <- 0
-      else res <- download.file(files[i], destfile)
+      else res <- utils::download.file(files[i], destfile)
     }
   }
   return(res)
@@ -278,13 +323,13 @@ get_ebi_fastqs <- function(srp_meta, srr_name, data_dir, method = c('ftp', 'aspe
 
 #' Utility function to run aspera
 #'
-#' @param ascpCMD aspera command as string.
+#' @param ascp_args Character vector of arguments to \code{ascp}.
 #' @param file Url to aspera file to download.
 #' @param destDir Path to directory to download \code{files} into.
 #'
-#' @export
-ascpR <- function (ascpCMD, file, destDir = getwd()) {
-  ascp_cmd <- paste(ascpCMD, src, destDir, sep = " ")
-  ret <- system(ascp_cmd)
+#' @return return code from call to ascp
+#'
+ascpR <- function (ascp_args, file, destDir = getwd()) {
+  ret <- system2('ascp', c(ascp_args, file, destDir))
   return(ret)
 }

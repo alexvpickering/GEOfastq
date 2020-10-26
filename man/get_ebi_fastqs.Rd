@@ -9,21 +9,28 @@ get_ebi_fastqs(
   srr_name,
   data_dir,
   method = c("ftp", "aspera"),
-  max_rate = "1g"
+  max_rate = "300m"
 )
 }
 \arguments{
-\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
+\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from
+\code{\link{crawl_gsms}}.}
 
 \item{srr_name}{Run accession as string.}
 
-\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
+\item{data_dir}{Path to folder that fastq files will be downloaded to. Will
+be created if doesn't exist.}
 
-\item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
-ascp command line utility to be on your path and in the authors experience frequently stalls.}
+\item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is
+generally faster but requires the
+ascp command line utility to be on your path and in the authors experience
+frequently stalls.}
 
-\item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
-reducing the default \code{'1g'} down to e.g. \code{'300m'} may help.}
+\item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target
+transfer rate. The default is \code{'300m'}.}
+}
+\value{
+Integer return code from ascp or \code{download.file}.
 }
 \description{
 Much faster to use aspera than ftp

@@ -7,16 +7,31 @@
 get_fastqs(srp_meta, data_dir, method = c("ftp", "aspera"), max_rate = "1g")
 }
 \arguments{
-\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from \code{\link{crawl_gsms}}.}
+\item{srp_meta}{\code{data.frame} with SRP meta info. Returned from
+\code{\link{crawl_gsms}}.}
 
-\item{data_dir}{Path to folder that fastq files will be downloaded to. Will be created if doesn't exist.}
+\item{data_dir}{Path to folder that fastq files will be downloaded to. Will
+be created if doesn't exist.}
 
-\item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is generally faster but requires the
-ascp command line utility to be on your path and in the authors experience frequently stalls.}
+\item{method}{One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is
+generally faster but requires the
+ascp command line utility to be on your path and in the authors experience
+frequently stalls.}
 
-\item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target transfer rate. If downloads are stalling,
-reducing the default \code{'1g'} down to e.g. \code{'300m'} may help.}
+\item{max_rate}{Used when \code{method = 'aspera'} only. Sets the target
+transfer rate. The default is \code{'300m'}.}
+}
+\value{
+Named vector of integer return codes from \code{ascp} or
+  \code{download.file}. Names are SRR runs.
 }
 \description{
 First tries to get RNA-Seq fastq files from EBI.
+}
+\examples{
+gsm_name <- 'GSM3926903'
+srp_meta <- crawl_gsms(gsm_name)
+data_dir <- tempdir()
+res <- get_fastqs(srp_meta, data_dir)
+
 }
