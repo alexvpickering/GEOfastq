@@ -1,3 +1,8 @@
+# GEOfastq 0.99.0
+
+* Submitted to Bioconductor
+
+
 # GEOfastq 0.6.5
 
 * Resolved NOTES from `BiocCheck::BiocCheck()`
