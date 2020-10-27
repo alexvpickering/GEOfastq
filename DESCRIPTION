@@ -1,7 +1,7 @@
 Package: GEOfastq
 Type: Package
 Title: Downloads Fastqs With GSE Accessions
-Version: 0.99.0
+Version: 0.99.1
 Author: Alex Pickering
 Maintainer: Alex Pickering <alexvpickering@gmail.com>
 Description: Goes down the rabbit hole from GEO to ENA to get the links to download fastq.gz files.
@@ -10,19 +10,19 @@ Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.1.1
 Imports:
-  xml2 (>= 1.2.2),
-  rvest (>= 0.3.4),
-  stringr (>= 1.4.0),
-  RCurl (>= 1.95.4.12),
-  doParallel(>= 1.0.15),
-  foreach (>= 1.5.0),
-  plyr (>= 1.8.6)
+  xml2,
+  rvest,
+  stringr,
+  RCurl,
+  doParallel,
+  foreach,
+  plyr
 Suggests:
-    BiocCheck,
-    roxygen2,
-    knitr,
-    rmarkdown,
-    testthat
+  BiocCheck,
+  roxygen2,
+  knitr,
+  rmarkdown,
+  testthat
 biocViews:
   RNASeq,
   DataImport
