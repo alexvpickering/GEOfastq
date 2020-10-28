@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+GEOfastq.Rproj
 
 geofastq_latest.tar.gz
 inst/doc
