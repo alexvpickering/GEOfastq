@@ -15,6 +15,7 @@ test_that("crawl_gsms gets GSM metadata", {
 })
 
 test_that("get_fastqs can download a fastq files", {
+    skip_on_bioc()
 
     # fake srp_meta
     run = 'SRR014242'
