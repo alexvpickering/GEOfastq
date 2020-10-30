@@ -1,8 +1,10 @@
 Package: GEOfastq
 Type: Package
 Title: Downloads ENA Fastqs With GEO Accessions
-Version: 0.99.4
-Authors@R: person("Alex", "Pickering", email="alexvpickering@gmail.com", role=c("cre", "aut"), comment = c(ORCID = "0000-0002-0002-6759"))
+Version: 0.99.5
+Authors@R: person("Alex", "Pickering", email="alexvpickering@gmail.com", 
+                  role=c("cre", "aut"), 
+                  comment = c(ORCID = "0000-0002-0002-6759"))
 Description: GEOfastq is used to download fastq files from the European 
   Nucleotide Archive (ENA) starting with an accession from the Gene Expression 
   Omnibus (GEO). To do this, sample metadata is retrieved from GEO and the 
