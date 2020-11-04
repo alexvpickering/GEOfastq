@@ -23,6 +23,7 @@ crawl_gse <- function(gse_name) {
         try(gse_text <- readLines(con))
         if(is.null(gse_text)) Sys.sleep(15)
         close(con)
+        attempt <- attempt + 1
     }
     return(gse_text)
 }
@@ -103,6 +104,7 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
                 try(gsm_text <- readLines(con))
                 if(is.null(gsm_text)) Sys.sleep(5)
                 close(con)
+                attempt <- attempt + 1
             }
 
             # get SRA number for this GSM
@@ -134,6 +136,7 @@ crawl_gsms <- function(gsm_names, max.workers = 50) {
                 while(is.null(srx_html) && attempt <= 3) {
                     try(srx_html <- xml2::read_html(srx_url))
                     if(is.null(srx_html)) Sys.sleep(5)
+                    attempt <- attempt + 1
                 }
                 srx_text <- rvest::html_text(srx_html)
 

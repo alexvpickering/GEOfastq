@@ -1,7 +1,7 @@
 Package: GEOfastq
 Type: Package
 Title: Downloads ENA Fastqs With GEO Accessions
-Version: 0.99.6
+Version: 0.99.7
 Authors@R: person("Alex", "Pickering", email="alexvpickering@gmail.com", 
                   role=c("cre", "aut"), 
                   comment = c(ORCID = "0000-0002-0002-6759"))
