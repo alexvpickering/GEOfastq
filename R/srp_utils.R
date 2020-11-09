@@ -316,9 +316,8 @@ get_ebi_fastqs <- function(
     resp <- RCurl::getURL(url)
     resp <- strsplit(resp, '\n')[[1]]
     resp <- strsplit(resp, ' +')
-    expect <- character(length(resp))
-    fnames <- vapply(resp, `[`, expect, 9)
-    fsizes <- vapply(resp, `[`, expect, 5)
+    fnames <- vapply(resp, `[`, '', 9)
+    fsizes <- vapply(resp, `[`, '', 5)
 
     if (method[1] == 'aspera') {
         ascp_path <- system2('which', 'ascp', stdout = TRUE)
