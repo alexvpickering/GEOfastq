@@ -9,9 +9,15 @@ install.packages('remotes')
 remotes::install_github('alexvpickering/GEOfastq')
 ```
 
-### Install Aspera Connect
+### Install Aspera Connect (optional)
 
-`GEOfastq` uses [aspera connect](https://downloads.asperasoft.com/en/downloads/8?list) because it is faster than ftp. Download and install it according to the [documentation](https://downloads.asperasoft.com/en/documentation/8). For me (Fedora 30), this works:
+`GEOfastq` can use [aspera
+connect](https://downloads.asperasoft.com/en/downloads/8?list) to download
+fastqs. It is faster than ftp for large single-file downloads (single-cell
+fastqs).
+To download and install it according to the
+[documentation](https://downloads.asperasoft.com/en/documentation/8). For me
+(Fedora 30), this works:
 
 ```bash
 wget https://download.asperasoft.com/download/sw/connect/3.9.6/ibm-aspera-connect-3.9.6.173386-linux-g2.12-64.tar.gz
@@ -40,7 +46,7 @@ After restarting Rstudio, to confirm things are set up properly:
 Sys.getenv('PATH')
 
 # should print info about Aspera Connect
-system('ascp --version')
+system2('ascp', '--version')
 ```
 
 ### Install docker image
@@ -49,10 +55,10 @@ To install `GEOfastq` and Aspera Connect from a pre-built docker image:
 
 ```bash
 # retrieve pre-built geofastq docker image
-wget https://drugseqr.s3.us-east-2.amazonaws.com/geofastq_latest.tar.gz
-sudo docker load < geofastq_latest.tar.gz
+docker pull alexvpickering/geofastq
 
-# run interactive container with host portion of `-v host:container` mounted where you want to persist data to
+# run interactive container with host portion of 
+#`-v host:container` mounted where you want to persist data to
 sudo docker run -it --rm \
   -v /srv:/srv \
   geofastq /bin/bash
@@ -61,19 +67,25 @@ sudo docker run -it --rm \
 
 ### Usage
 
-First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get study metadata and corresponding fastq.gz download links on [ENA](https://www.ebi.ac.uk/ena):
+First crawl a study page on [GEO](https://www.ncbi.nlm.nih.gov/geo/) to get
+study metadata and corresponding fastq.gz download links on
+[ENA](https://www.ebi.ac.uk/ena):
 
 ```R
+library(GEOfastq)
+
 gse_name <- 'GSE117570'
-srp_meta <- GEOfastq::get_srp_meta(gse_name)
+#' gse_text <- crawl_gse(gse_name)
+#' gsm_names <- extract_gsms(gse_text)
+#' srp_meta <- crawl_gsms(gsm_names)
 ```
 
 Next, subset `srp_meta` to samples that you want, then download:
 
 ```R
 srp_meta <- srp_meta[srp_meta$source_name == 'Adjacent normal', ]
-GEOfastq::get_fastqs(gse_name, srp_meta)
+get_fastqs(srp_meta, data_dir = tempdir())
 ```
 
-That's all folks!
+That's all folks! GOTO: `kallisto`?
 

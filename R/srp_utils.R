@@ -1,255 +1,373 @@
+#' Get GSE text from GEO
+#'
+#' @param gse_name  GEO study name to get metadata for
+#'
+#' @return Character vector of lines on GSE record.
+#' @export
+#'
+#' @examples
+#' gse_text <- crawl_gse('GSE111459')
+#'
+crawl_gse <- function(gse_name) {
 
-#' Get metadata needed to download RNA-seq data for GSE
+    # get html text for GSE page
+    gse_url  <- paste0(
+        "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=",
+        gse_name,
+        "&targ=self&form=text&view=full")
+
+    gse_text <- NULL
+    attempt <- 1
+    while(is.null(gse_text) && attempt <= 3) {
+        con <- url(gse_url)
+        try(gse_text <- readLines(con))
+        if(is.null(gse_text)) Sys.sleep(15)
+        close(con)
+        attempt <- attempt + 1
+    }
+    return(gse_text)
+}
+
+#' Extract GSMs needed to download RNA-seq data for a series
 #'
-#' Goes to GSE page to get GSMs then goes to each GSM page to get SRX then to each SRX page to get some more metadata.
 #'
-#' @param gse_name GEO study name to get metadata for
-#' @param data_dir Path that folder with \code{gse_name} will be created in to save result.
+#' @param gse_text GSE text returned from \code{\link{crawl_gse}}
 #'
-#' @return \code{data.frame} with sample annotations for each GSE. Get's saved as \emph{data_dir/gse_name/gse_name.rds}.
+#' @return Character vector of sample GSMs for the series \code{gse_name}
 #' @export
 #'
 #' @examples
 #'
-#' srp_meta <- get_srp_meta('GSE117570')
-get_srp_meta <- function(gse_name, data_dir = getwd()) {
+#' gse_text <- crawl_gse('GSE111459')
+#' gsm_names <- extract_gsms(gse_text)
+#'
+extract_gsms <- function(gse_text) {
 
-  gse_dir <- file.path(data_dir, gse_name)
-  if (!dir.exists(gse_dir)) dir.create(gse_dir)
+    # GSM names
+    gsm_lines <- grep('^!Series_sample_id', gse_text)
+    gsm_names <- gsub(
+        '^!Series_sample_id = (GSM\\d+)$', '\\1',
+        gse_text[gsm_lines])
 
-  # load srp meta from file if exists
-  srp_meta_path <- file.path(gse_dir, 'srp_meta.rds')
-  if (file.exists(srp_meta_path)) return(readRDS(srp_meta_path))
+    return(gsm_names)
+}
 
-  # get GSM names ----
+#' Crawls SRX pages for each GSM to get metadata.
+#'
+#' Goes to each GSM page to get SRX then to each SRX page to get some more
+#' metadata.
+#'
+#'
+#' @param gsm_names Character vector of GSMs.
+#' @param max.workers Maximum number of parallel workers to split task betweem
+#' @importFrom foreach %dopar%
+#'
+#' @return data.frame
+#' @export
+#'
+#' @examples
+#' srp_meta <- crawl_gsms("GSM3031462")
+#'
+#' # returns NULL because records on dbGAP for privacy reasons
+#' srp_meta <- crawl_gsms("GSM2439650")
+#'
+#' # example with empty values
+#' srp_meta <- crawl_gsms('GSM4043025')
+#'
+crawl_gsms <- function(gsm_names, max.workers = 50) {
+    # for R CMD Check
+    j = NULL
 
-  # get html text for GSE page
-  gse_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gse_name)
+    nsamp <- length(gsm_names)
+    cat(nsamp, 'GSMs to process\n')
 
-  gse_html <- NULL
-  attempt <- 1
-  while(is.null(gse_html) && attempt <= 3) {
-    try(gse_html <- xml2::read_html(gse_url))
-    if(is.null(gse_html)) Sys.sleep(15)
-  }
-  gse_text <- rvest::html_text(gse_html)
+    cl <- parallel::makeCluster(min(max.workers, nsamp))
+    doParallel::registerDoParallel(cl)
 
-  # GSM names
-  samples <- stringr::str_extract(gse_text, stringr::regex('\nSamples.+?\nRelations', dotall = TRUE))
-  samples <- stringr::str_extract_all(samples, 'GSM\\d+')[[1]]
+    srp_meta <- foreach::foreach(
+        j = seq_len(nsamp),
+        .combine = plyr::rbind.fill) %dopar% {
 
-  # get SRX for each GSM ----
+            # save in srp_meta
+            srp_meta <- data.frame(stringsAsFactors = FALSE)
 
-  # save in srp_meta
-  srp_meta <- data.frame(stringsAsFactors = FALSE)
+            gsm_name <- gsm_names[j]
+            # get html text
+            geo_url <- "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc="
+            gsm_url  <- paste0(
+                geo_url, gsm_name, '&targ=self&form=text&view=full')
 
-  cat(length(samples), 'GSMs to process\n')
-  for (j in 1:length(samples)) {
-    cat('Working on GSM number', j, '\n')
+            gsm_text <- NULL
+            attempt <- 1
+            while(is.null(gsm_text) && attempt <= 3) {
+                con <- url(gsm_url)
+                try(gsm_text <- readLines(con))
+                if(is.null(gsm_text)) Sys.sleep(5)
+                close(con)
+                attempt <- attempt + 1
+            }
 
-    gsm_name <- samples[j]
-    # get html text
-    gsm_url  <- paste0("https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=", gsm_name)
+            # get SRA number for this GSM
+            # some won't (e.g. submitted to dbGAP for privacy reasons)
+            has.srx <- grep('!Sample_relation = SRA: .+?SRX\\d+', gsm_text)
+            if (!length(has.srx)) return(NULL)
 
-    gsm_html <- NULL
-    attempt <- 1
-    while(is.null(gsm_html) && attempt <= 3) {
-      try(gsm_html <- xml2::read_html(gsm_url))
-      if(is.null(gsm_html)) Sys.sleep(5)
-    }
-    gsm_text <- rvest::html_text(gsm_html)
+            experiment <- gsub('^.+?(SRX\\d+)$', '\\1', gsm_text[has.srx])
 
-    # get SRA number for this GSM
-    experiment <- stringr::str_extract(gsm_text, 'SRA\nSRX\\d+\n')
-    experiment <- gsub('SRA\n(.+?)\n', '\\1', experiment)
+            # fix for e.g. GSM4043025 with empty values
+            gsm_text <- gsm_text[gsm_text != ""]
+            info <- gsub('^!Sample_', '', gsm_text[-1])
+            cols <- gsub('^(.+?) = .+?$', '\\1', info)
+            cols <- make.unique(cols)
+            vals <- gsub('^.+? = (.+?$)', '\\1', info)
+            names(vals) <- cols
 
-    # extract other GSM data while we are here
-    title <- stringr::str_extract(gsm_text, '\nTitle\n.+?\n')
-    sample_type <- stringr::str_extract(gsm_text, '\nSample type\n.+?\n')
-    source_name <- stringr::str_extract(gsm_text, '\nSource name\n.+?\n')
-    organism <- stringr::str_extract(gsm_text, '\nOrganism\n.+?\n')
-    characteristics <- stringr::str_extract(gsm_text, '\nCharacteristics\n.+?\n')
-    treatment_protocol <- stringr::str_extract(gsm_text, '\nTreatment protocol\n.+?\n')
-    growth_protocol <- stringr::str_extract(gsm_text, '\nGrowth protocol\n.+?\n')
-    extracted_molecule <- stringr::str_extract(gsm_text, '\nExtracted molecule\n.+?\n')
-    extraction_protocol <- stringr::str_extract(gsm_text, stringr::regex("\nExtraction protocol\n.+?\nLibrary strategy", dotall = TRUE))
-    extraction_protocol <- gsub('\nExtraction protocol\n(.+?)\n\nLibrary strategy', '\\1', extraction_protocol)
-    library_strategy <- stringr::str_extract(gsm_text, '\nLibrary strategy\n.+?\n')
-    library_selection <- stringr::str_extract(gsm_text, '\nLibrary selection\n.+?\n')
-    instrument_model <- stringr::str_extract(gsm_text, '\nInstrument model\n.+?\n')
-    description <- stringr::str_extract(gsm_text, '\nDescription\n.+?\n')
-    data_processing <- stringr::str_extract(gsm_text, stringr::regex('\nData processing\n.+?\nSubmission date\n', dotall = TRUE))
-    data_processing <- gsub('\nData processing\n(.+?)\n\nSubmission date\n', '\\1', data_processing)
-    platform_id <- stringr::str_extract(gsm_text, '\nPlatform ID\n.+?\n')
 
-    if (!is.na(experiment)) {
+            if (!is.na(experiment)) {
 
-      # extract SRR runs info -----
-      srx_url  <- paste0("https://www.ncbi.nlm.nih.gov/sra/", experiment, '[accn]?report=FullXml')
+                # extract SRR runs info -----
+                srx_url  <- paste0(
+                    "https://www.ncbi.nlm.nih.gov/sra/",
+                    experiment,
+                    '[accn]?report=FullXml')
 
-      srx_html <- NULL
-      attempt <- 1
-      while(is.null(srx_html) && attempt <= 3) {
-        try(srx_html <- xml2::read_html(srx_url))
-        if(is.null(srx_html)) Sys.sleep(5)
-      }
-      srx_text <- rvest::html_text(srx_html)
+                srx_html <- NULL
+                attempt <- 1
+                while(is.null(srx_html) && attempt <= 3) {
+                    try(srx_html <- xml2::read_html(srx_url))
+                    if(is.null(srx_html)) Sys.sleep(5)
+                    attempt <- attempt + 1
+                }
+                srx_text <- rvest::html_text(srx_html)
 
-      runs <- stringr::str_extract_all(srx_text, '<PRIMARY_ID>SRR\\d+</PRIMARY_ID>')[[1]]
-      runs <- gsub('<PRIMARY_ID>(SRR\\d+)</PRIMARY_ID>', '\\1', unique(runs))
-      taxon_id <- stringr::str_extract(srx_text, '<TAXON_ID>\\d+</TAXON_ID>')
-      library_source <- stringr::str_extract(srx_text, '<LIBRARY_SOURCE>.+?</LIBRARY_SOURCE>')
-      library_layout <- stringr::str_extract(srx_text, '<LIBRARY_LAYOUT>.+?</LIBRARY_LAYOUT>')
-      library_layout <- stringr::str_extract(library_layout, 'SINGLE|PAIRED')
+                runs <- stringr::str_extract_all(
+                    srx_text, '<PRIMARY_ID>SRR\\d+</PRIMARY_ID>')[[1]]
 
-      if (length(runs)) {
-        # add info to srp_meta
-        srp_meta[runs, 'run'] <- runs
-        srp_meta[runs, 'experiment'] <- experiment
-        srp_meta[runs, 'gsm_name'] <- gsm_name
-        srp_meta[runs, 'title'] <- gsub('\nTitle\n(.+?)\n', '\\1', title)
-        srp_meta[runs, 'sample_type'] <- gsub('\nSample type\n(.+?)\n', '\\1', sample_type)
-        srp_meta[runs, 'source_name'] <- gsub('\nSource name\n(.+?)\n', '\\1', source_name)
-        srp_meta[runs, 'organism'] <- gsub('\nOrganism\n(.+?)\n', '\\1', organism)
-        srp_meta[runs, 'characteristics'] <- gsub('\nCharacteristics\n(.+?)\n', '\\1', characteristics)
-        srp_meta[runs, 'treatment_protocol'] <- gsub('\nTreatment protocol\n(.+?)\n', '\\1', treatment_protocol)
-        srp_meta[runs, 'growth_protocol'] <- gsub('\nGrowth protocol\n(.+?)\n', '\\1', growth_protocol)
-        srp_meta[runs, 'extracted_molecule'] <- gsub('\nExtracted molecule\n(.+?)\n', '\\1', extracted_molecule)
-        srp_meta[runs, 'extraction_protocol'] <- substr(extraction_protocol, 1, nchar(extraction_protocol)-2)
-        srp_meta[runs, 'library_strategy'] <- gsub('\nLibrary strategy\n(.+?)\n', '\\1', library_strategy)
-        srp_meta[runs, 'library_selection'] <- gsub('\nLibrary selection\n(.+?)\n', '\\1', library_selection)
-        srp_meta[runs, 'instrument_model'] <- gsub('\nInstrument model\n(.+?)\n', '\\1', instrument_model)
-        srp_meta[runs, 'description'] <- gsub('\nDescription\n(.+?)\n', '\\1', description)
-        srp_meta[runs, 'data_processing'] <- substr(data_processing, 1, nchar(data_processing)-2)
-        srp_meta[runs, 'platform_id'] <- gsub('\nPlatform ID\n(.+?)\n', '\\1', platform_id)
+                runs <- gsub(
+                    '<PRIMARY_ID>(SRR\\d+)</PRIMARY_ID>', '\\1', unique(runs))
 
-        srp_meta[runs, 'library_source'] <- gsub('<LIBRARY_SOURCE>(.+?)</LIBRARY_SOURCE>', '\\1', library_source)
-        srp_meta[runs, 'library_layout'] <- library_layout
-        srp_meta[runs, 'taxon_id'] <- gsub('<TAXON_ID>(\\d+)</TAXON_ID>', '\\1', taxon_id)
-        srp_meta[runs, 'ebi_dir']  <- sapply(runs, get_dldir, 'ebi')
-        srp_meta[runs, 'ncbi_dir'] <- sapply(runs, get_dldir, 'ncbi')
-      }
-    }
-  }
+                taxon_id <- stringr::str_extract(
+                    srx_text, '<TAXON_ID>\\d+</TAXON_ID>')
 
-  saveRDS(srp_meta, srp_meta_path)
-  return(srp_meta)
+                library_source <- stringr::str_extract(
+                    srx_text, '<LIBRARY_SOURCE>.+?</LIBRARY_SOURCE>')
+
+                library_layout <- stringr::str_extract(
+                    srx_text, '<LIBRARY_LAYOUT>.+?</LIBRARY_LAYOUT>')
+
+                library_layout <- stringr::str_extract(
+                    library_layout, 'SINGLE|PAIRED')
+
+                if (length(runs)) {
+
+                    # add info to srp_meta
+                    srp_meta[runs, 'run'] <- runs
+                    srp_meta[runs, 'experiment'] <- experiment
+                    srp_meta[runs, 'gsm_name'] <- gsm_name
+                    for (col in cols) srp_meta[runs, col] <- vals[col]
+
+                    srp_meta[runs, 'library_source'] <- gsub(
+                        '<LIBRARY_SOURCE>(.+?)</LIBRARY_SOURCE>',
+                        '\\1',
+                        library_source)
+
+                    srp_meta[runs, 'library_layout'] <- library_layout
+                    srp_meta[runs, 'taxon_id'] <- gsub(
+                        '<TAXON_ID>(\\d+)</TAXON_ID>',
+                        '\\1',
+                        taxon_id)
+
+                    srp_meta[runs, 'ebi_dir']  <-
+                        vapply(runs, get_dldir, 'ebi')
+                    srp_meta[runs, 'ncbi_dir'] <-
+                        vapply(runs, get_dldir, 'ncbi')
+                }
+            }
+            return(srp_meta)
+        }
+    parallel::stopCluster(cl)
+    row.names(srp_meta) <- srp_meta$run
+    return(srp_meta)
 }
 
 
 #' Gets part of path to download bulk RNAseq sample from EBI or NCBI
 #'
-#' @param srr SRR run name
+#' @param srr SRR/ERR run name
 #' @param type Either \code{'ebi'} or \code{'ncbi'}
 #'
 #' @return String path used by \code{\link{get_fastqs}}.
 #' @export
+#' @examples
+#'
+#' get_dldir('SRR014242')
+#'
 get_dldir <- function(srr, type = c('ebi', 'ncbi')) {
 
 
-  dir1 <- substr(srr, 1, 6)
+    dir1 <- substr(srr, 1, 6)
 
-  if (type[1] == 'ebi') {
-    digits  <- gsub('^SRR', '', srr)
-    ndigits <- nchar(digits)
+    if (type[1] == 'ebi') {
+        digits  <- gsub('^SRR|^ERR', '', srr)
+        ndigits <- nchar(digits)
 
-    if (ndigits == 7) {
-      dir2 <- paste0('00', substr(digits, 7, 7))
+        if (ndigits == 7) {
+            dir2 <- paste0('00', substr(digits, 7, 7))
 
-    } else if (ndigits == 8) {
-      dir2 <- paste0('0', substr(digits, 7, 8))
+        } else if (ndigits == 8) {
+            dir2 <- paste0('0', substr(digits, 7, 8))
 
-    } else if (ndigits == 9) {
-      dir2 <- substr(digits, 7, 9)
+        } else if (ndigits == 9) {
+            dir2 <- substr(digits, 7, 9)
 
-    } else if (ndigits == 6) {
-      return(file.path(dir1, srr))
+        } else if (ndigits == 6) {
+            return(file.path(dir1, srr))
+        }
+
+        return(file.path(dir1, dir2, srr))
+
+    } else if (type[1] == 'ncbi') {
+        return(file.path(dir1, srr))
     }
-
-    return(file.path(dir1, dir2, srr))
-
-  } else if (type[1] == 'ncbi') {
-    return(file.path(dir1, srr))
-  }
 
 }
 
 
-#' Download and fasterq-dump RNA-seq data from GEO
+#' Download and RNA-seq fastq data from EBI
 #'
-#' First tries to get RNA-Seq fastq files from EBI. If not successful, gets SRA from GEO and converts to fastq.gz.
+#' First tries to get RNA-Seq fastq files from EBI.
 #'
-#' @param gse_name GSE name. Will create folder with this name in \code{data_dir} and download data there.
-#' @param srp_meta \code{data.frame} with SRP meta info. Returned from \code{\link{get_srp_meta}}.
-#' @param data_dir Path to folder that \code{gse_name} folder will be created in.
+#' @param srp_meta \code{data.frame} with SRP meta info. Returned from
+#' \code{\link{crawl_gsms}}.
+#' @param data_dir Path to folder that fastq files will be downloaded to. Will
+#' be created if doesn't exist.
+#' @param method One of \code{'aspera'} or \code{'ftp'}. \code{'aspera'} is
+#' generally faster but requires the
+#' ascp command line utility to be on your path and in the authors experience
+#' frequently stalls.
+#' @param max_rate Used when \code{method = 'aspera'} only. Sets the target
+#' transfer rate. The default is \code{'300m'}.
 #'
+#' @return Named vector of integer return codes from \code{ascp} or
+#' \code{download.file}. Names are SRR runs.
 #' @export
-get_fastqs <- function(gse_name, srp_meta, data_dir = getwd()) {
+#'
+#' @examples
+#' gsm_name <- 'GSM3926903'
+#' srp_meta <- crawl_gsms(gsm_name)
+#' data_dir <- tempdir()
+#' res <- get_fastqs(srp_meta, data_dir)
+#'
+get_fastqs <- function(
+    srp_meta, data_dir, method = c('ftp', 'aspera'), max_rate = '1g') {
 
-  # setup gse directory
-  gse_dir  <- file.path(data_dir, gse_name)
-  dir.create(gse_dir)
+    # setup fastq directory
+    dir.create(data_dir, showWarnings = FALSE)
 
+    # seperate runs based on GSM (can be multiple per GSM)
+    srr_names <- srp_meta$run
+    gsm_names <- unique(srp_meta$gsm_name)
+    srr_names_list <- lapply(
+        gsm_names, function(gsm_name)srr_names[srp_meta$gsm_name %in% gsm_name])
+    names(srr_names_list) <- gsm_names
 
-  # seperate runs based on GSM (can be multiple per GSM)
-  srr_names <- srp_meta$run
-  gsm_names <- unique(srp_meta$gsm_name)
-  srr_names_list <- lapply(gsm_names, function(gsm_name) srr_names[srp_meta$gsm_name %in% gsm_name])
-  names(srr_names_list) <- gsm_names
+    method <- method[1]
+    ngsm <- length(gsm_names)
 
-  # download everything
-  for (i in seq_along(srr_names_list)) {
-    srr_names <- srr_names_list[[i]]
+    res <- c()
+    for (i in seq_len(ngsm)) {
+        # download everything
+        srr_names <- srr_names_list[[i]]
+        resi <- c()
 
-    for (srr_name in srr_names) {
-      # try to get fastq from ebi
-      get_ebi_fastqs(srp_meta, srr_name, gse_dir)
+        for (srr_name in srr_names) {
+            # try to get fastq from ebi
+            resi <- c(
+                resi,
+                tryCatch(
+                    get_ebi_fastqs(
+                        srp_meta, srr_name, data_dir, method, max_rate),
+                    error = function(e) {
+                        warning(e$message, call. = FALSE)
+                        return(1)
+                    }))
+        }
+        names(resi) <- srr_names
+        res <- c(res, resi)
     }
-  }
-  return(NULL)
+    return(res)
 }
 
 #' Download fastqs from EBI
 #'
 #' Much faster to use aspera than ftp
 #'
-#' @param srp_meta Result from \code{get_srp_meta}.
 #' @param srr_name Run accession as string.
-#' @param gse_dir Folder to save fastq.gz files in
-#' @param method One of either \code{'aspera'} (Default) or \code{'ftp'}.
+#' @inheritParams get_fastqs
 #'
-#' @export
+#' @return Integer return code from ascp or \code{download.file}.
 #'
-get_ebi_fastqs <- function(srp_meta, srr_name, gse_dir, method = c('aspera', 'ftp')) {
-  url <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/.')
-  fnames <- unlist(strsplit(RCurl::getURL(url, dirlistonly = TRUE), '\n'))
+get_ebi_fastqs <- function(
+    srp_meta, srr_name, data_dir, method=c('ftp', 'aspera'), max_rate='300m') {
 
-  if (method[1] == 'aspera') {
-    ascp_path <- system('which ascp', intern = TRUE)
-    ascp_pubkey <- gsub('bin/ascp$', 'etc/asperaweb_id_dsa.openssh', ascp_path)
+    pre_url <- 'ftp://ftp.sra.ebi.ac.uk/vol1/fastq/'
+    url <- paste0(pre_url, srp_meta[srr_name, 'ebi_dir'], '/')
 
-    ascpCMD <- paste('ascp --overwrite=diff -k1 -QT -l 1g -P33001 -i', ascp_pubkey)
-    files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
-    ascpR(ascpCMD, files, gse_dir)
+    resp <- RCurl::getURL(url)
+    resp <- strsplit(resp, '\n')[[1]]
+    resp <- strsplit(resp, ' +')
+    fnames <- vapply(resp, `[`, '', 9)
+    fsizes <- vapply(resp, `[`, '', 5)
 
-  } else if (method[1] == 'ftp') {
-    files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/', srp_meta[srr_name, 'ebi_dir'], '/', fnames)
-    download.file(files, file.path(gse_dir, fnames))
-  }
+    if (method[1] == 'aspera') {
+        ascp_path <- system2('which', 'ascp', stdout = TRUE)
+        ascp_pubkey <- gsub('bin/ascp$',
+                            'etc/asperaweb_id_dsa.openssh',
+                            ascp_path)
+
+        # only overwrite if different from source
+        ascp_args <- c(
+            '--overwrite=diff',
+            '-k1', '-QT', '-l', max_rate, '-P33001', '-i', ascp_pubkey)
+
+        files <- paste0('era-fasp@fasp.sra.ebi.ac.uk:/vol1/fastq/',
+                        srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+
+        for (i in seq_along(files)) {
+            destfile <- file.path(data_dir, fnames[i])
+            if (file.exists(destfile) && file.size(destfile) == fsizes[i]) {
+                res <- 0
+            } else {
+                res <- ascpR(ascp_args, files[i], data_dir)
+            }
+        }
+
+    } else if (method[1] == 'ftp') {
+        files <- paste0('ftp://ftp.sra.ebi.ac.uk/vol1/fastq/',
+                        srp_meta[srr_name, 'ebi_dir'], '/', fnames)
+
+        for (i in seq_along(files)) {
+            # check for existing file with same size
+            destfile <- file.path(data_dir, fnames[i])
+            if (file.exists(destfile) && file.size(destfile) == fsizes[i]) {
+                res <- 0
+            } else {
+                res <- utils::download.file(files[i], destfile)
+            }
+        }
+    }
+    return(res)
 }
 
 #' Utility function to run aspera
 #'
-#' @param ascpCMD aspera command as string.
-#' @param files Urls to aspera files to download.
+#' @param ascp_args Character vector of arguments to \code{ascp}.
+#' @param file Url to aspera file to download.
 #' @param destDir Path to directory to download \code{files} into.
 #'
-#' @export
-ascpR <- function (ascpCMD, files, destDir = getwd()) {
-  ret <- c()
-  for (src in files) {
-    ascp_cmd <- paste(ascpCMD, src, destDir, sep = " ")
-    ret <- c(ret, system(ascp_cmd))
-  }
-  return(ret)
+#' @return return code from call to ascp
+#'
+ascpR <- function (ascp_args, file, destDir = getwd()) {
+    ret <- system2('ascp', c(ascp_args, file, destDir))
+    return(ret)
 }

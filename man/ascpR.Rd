@@ -4,14 +4,17 @@
 \alias{ascpR}
 \title{Utility function to run aspera}
 \usage{
-ascpR(ascpCMD, files, destDir = getwd())
+ascpR(ascp_args, file, destDir = getwd())
 }
 \arguments{
-\item{ascpCMD}{aspera command as string.}
+\item{ascp_args}{Character vector of arguments to \code{ascp}.}
 
-\item{files}{Urls to aspera files to download.}
+\item{file}{Url to aspera file to download.}
 
 \item{destDir}{Path to directory to download \code{files} into.}
+}
+\value{
+return code from call to ascp
 }
 \description{
 Utility function to run aspera

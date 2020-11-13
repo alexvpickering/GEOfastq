@@ -7,7 +7,7 @@
 get_dldir(srr, type = c("ebi", "ncbi"))
 }
 \arguments{
-\item{srr}{SRR run name}
+\item{srr}{SRR/ERR run name}
 
 \item{type}{Either \code{'ebi'} or \code{'ncbi'}}
 }
@@ -16,4 +16,9 @@ String path used by \code{\link{get_fastqs}}.
 }
 \description{
 Gets part of path to download bulk RNAseq sample from EBI or NCBI
+}
+\examples{
+
+get_dldir('SRR014242')
+
 }
