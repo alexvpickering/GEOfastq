@@ -304,6 +304,7 @@ get_fastqs <- function(
 #'
 #' @param srr_name Run accession as string.
 #' @inheritParams get_fastqs
+#' @keywords internal
 #'
 #' @return Integer return code from ascp or \code{download.file}.
 #'
@@ -364,6 +365,7 @@ get_ebi_fastqs <- function(
 #' @param ascp_args Character vector of arguments to \code{ascp}.
 #' @param file Url to aspera file to download.
 #' @param destDir Path to directory to download \code{files} into.
+#' @keywords internal
 #'
 #' @return return code from call to ascp
 #'

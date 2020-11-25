@@ -18,6 +18,16 @@ knitr::opts_chunk$set(
 library(GEOfastq)
 ```
 
+# Installation
+
+`GEOfastq` can be installed from Bioconductor as follows:
+
+```{r, eval = FALSE}
+if(!requireNamespace("BiocManager", quietly = TRUE))
+    install.packages("BiocManager")
+BiocManager::install("GEOfastq")
+```
+
 # Overview of GEOfastq
 
 The NCBI [Gene Expression Omnibus](https://www.ncbi.nlm.nih.gov/geo/) (GEO)

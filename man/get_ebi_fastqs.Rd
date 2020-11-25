@@ -35,3 +35,4 @@ Integer return code from ascp or \code{download.file}.
 \description{
 Much faster to use aspera than ftp
 }
+\keyword{internal}
