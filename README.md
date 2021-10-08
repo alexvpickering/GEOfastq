@@ -84,6 +84,10 @@ Next, subset `srp_meta` to samples that you want, then download:
 
 ```R
 srp_meta <- srp_meta[srp_meta$source_name == 'Adjacent normal', ]
+
+# bump download time for utils::download.file
+options(timeout=1e6)
+
 get_fastqs(srp_meta, data_dir = tempdir())
 ```
 
